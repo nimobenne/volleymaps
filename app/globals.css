@@ -1,0 +1,95 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Literal font names — no runtime vars (Tailwind v4 resolves at parse time) */
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-display: "Barlow Condensed", ui-sans-serif, system-ui, sans-serif;
+
+  /* App accent colors */
+  --color-beach: var(--beach);
+  --color-indoor: var(--indoor);
+  --color-live: var(--live);
+  --color-soon: var(--soon);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+}
+
+/* ─── Court Lights theme — dark warm charcoal, amber accent ─── */
+:root {
+  --background:          oklch(0.13 0.008 65);
+  --foreground:          oklch(0.94 0.010 75);
+
+  --card:                oklch(0.18 0.008 65);
+  --card-foreground:     oklch(0.94 0.010 75);
+
+  --popover:             oklch(0.18 0.008 65);
+  --popover-foreground:  oklch(0.94 0.010 75);
+
+  /* Amber/gold — the volleyball */
+  --primary:             oklch(0.82 0.170 75);
+  --primary-foreground:  oklch(0.13 0.008 65);
+
+  --secondary:           oklch(0.22 0.008 65);
+  --secondary-foreground:oklch(0.94 0.010 75);
+
+  --muted:               oklch(0.21 0.008 65);
+  --muted-foreground:    oklch(0.56 0.020 70);
+
+  --accent:              oklch(0.22 0.008 65);
+  --accent-foreground:   oklch(0.94 0.010 75);
+
+  --destructive:         oklch(0.65 0.220 25);
+
+  --border:              oklch(0.26 0.008 65);
+  --input:               oklch(0.22 0.008 65);
+  --ring:                oklch(0.82 0.170 75);
+
+  --radius: 0.5rem;
+
+  /* Venue type accents — Mikasa volleyball palette */
+  --beach:  oklch(0.82 0.170 75);   /* Mikasa gold/amber */
+  --indoor: oklch(0.52 0.230 263);  /* Mikasa cobalt blue */
+
+  /* Status colors */
+  --live:   oklch(0.68 0.210 145);  /* vivid green */
+  --soon:   oklch(0.87 0.190 105);  /* bright lemon yellow */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
