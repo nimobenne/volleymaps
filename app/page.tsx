@@ -1,3 +1,5 @@
+export const revalidate = 3600
+
 import { Venue, GameSession } from '@/types'
 import HomeClient from '@/components/HomeClient'
 import { MOCK_VENUES, MOCK_SESSIONS } from '@/lib/mock-data'

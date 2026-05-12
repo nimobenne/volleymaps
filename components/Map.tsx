@@ -16,6 +16,7 @@ interface MapProps {
   venues: Venue[]
   sessions: GameSession[]
   typeFilter: 'all' | 'beach' | 'indoor' | 'grass'
+  searchQuery?: string
 }
 
 function createMarkerElement(venue: Venue, onClick: () => void): HTMLElement {
@@ -56,7 +57,7 @@ function createMarkerElement(venue: Venue, onClick: () => void): HTMLElement {
   return wrapper
 }
 
-export default function Map({ venues, sessions, typeFilter }: MapProps) {
+export default function Map({ venues, sessions, typeFilter, searchQuery = '' }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<{ marker: maplibregl.Marker; venueId: string }[]>([])
@@ -89,10 +90,13 @@ export default function Map({ venues, sessions, typeFilter }: MapProps) {
       markersRef.current.forEach(({ marker }) => marker.remove())
       markersRef.current = []
 
+      const q = searchQuery.toLowerCase()
       venues
         .filter(v => typeFilter === 'all' || v.type === typeFilter)
         .forEach(venue => {
           const el = createMarkerElement(venue, () => setSelectedVenue(venue))
+          const matches = !q || venue.name.toLowerCase().includes(q) || venue.address.toLowerCase().includes(q)
+          el.style.opacity = matches ? '1' : '0.15'
           const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
             .setLngLat([venue.lng, venue.lat])
             .addTo(map)
@@ -105,7 +109,7 @@ export default function Map({ venues, sessions, typeFilter }: MapProps) {
     } else {
       map.once('load', addMarkers)
     }
-  }, [venues, typeFilter])
+  }, [venues, typeFilter, searchQuery])
 
   return (
     <div className="relative w-full h-full">

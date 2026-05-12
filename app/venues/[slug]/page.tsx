@@ -1,11 +1,15 @@
 import { Venue, GameSession } from '@/types'
 import { notFound } from 'next/navigation'
 import GameCard from '@/components/GameCard'
+import ShareButton from '@/components/ShareButton'
 import { MapPin, ExternalLink, ArrowLeft } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { DAY_NAMES_FULL } from '@/lib/sessions'
 import Link from 'next/link'
 import { MOCK_VENUES, MOCK_SESSIONS } from '@/lib/mock-data'
+import type { Metadata } from 'next'
+
+export const revalidate = 3600
 
 const USE_MOCK = !process.env.NEXT_PUBLIC_SUPABASE_URL
 
@@ -13,39 +17,46 @@ interface PageProps {
   params: Promise<{ slug: string }>
 }
 
+async function getVenue(slug: string): Promise<Venue | null> {
+  if (USE_MOCK) return MOCK_VENUES.find(v => v.slug === slug) ?? null
+  const { createClient } = await import('@supabase/supabase-js')
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  const { data } = await supabase.from('venues').select('*').eq('slug', slug).eq('approved', true).single()
+  return (data as Venue) ?? null
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params
+  const venue = await getVenue(slug)
+  if (!venue) return { title: 'Venue Not Found — VolleyMaps' }
+  const typeLabel = venue.type === 'beach' ? 'Beach' : venue.type === 'grass' ? 'Grass' : 'Indoor'
+  return {
+    title: `${venue.name} — VolleyMaps`,
+    description: `${typeLabel} volleyball at ${venue.address}, Toronto. View the full schedule and sessions on VolleyMaps.`,
+    openGraph: {
+      title: `${venue.name} — VolleyMaps`,
+      description: `${typeLabel} volleyball at ${venue.address}, Toronto.`,
+      url: `https://volleymaps.vercel.app/venues/${slug}`,
+      siteName: 'VolleyMaps',
+      type: 'website',
+    },
+  }
+}
+
 export default async function VenuePage({ params }: PageProps) {
   const { slug } = await params
 
-  let venue: Venue | null = null
+  const venue = await getVenue(slug)
   let allSessions: GameSession[] = []
 
-  if (USE_MOCK) {
-    venue = MOCK_VENUES.find(v => v.slug === slug) ?? null
-    allSessions = venue ? MOCK_SESSIONS.filter(s => s.venue_id === venue!.id) : []
-  } else {
-    const { createClient } = await import('@supabase/supabase-js')
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
-    const { data: venueData } = await supabase
-      .from('venues')
-      .select('*')
-      .eq('slug', slug)
-      .eq('approved', true)
-      .single()
-
-    venue = venueData as Venue ?? null
-
-    if (venue) {
-      const { data: sessionData } = await supabase
-        .from('game_sessions')
-        .select('*')
-        .eq('venue_id', venue.id)
-        .order('day_of_week')
-        .order('start_time')
-      allSessions = (sessionData ?? []) as GameSession[]
+  if (venue) {
+    if (USE_MOCK) {
+      allSessions = MOCK_SESSIONS.filter(s => s.venue_id === venue.id)
+    } else {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      const { data } = await supabase.from('game_sessions').select('*').eq('venue_id', venue.id).order('day_of_week').order('start_time')
+      allSessions = (data ?? []) as GameSession[]
     }
   }
 
@@ -87,9 +98,12 @@ export default async function VenuePage({ params }: PageProps) {
         <h1 className="font-display font-bold text-3xl uppercase tracking-wide leading-tight">
           {venue.name}
         </h1>
-        <span className="shrink-0 text-xs font-bold uppercase tracking-widest mt-1.5" style={{ color: venueColor }}>
-          {typeLabel}
-        </span>
+        <div className="flex items-center gap-2 shrink-0 mt-1">
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: venueColor }}>
+            {typeLabel}
+          </span>
+          <ShareButton url={`https://volleymaps.vercel.app/venues/${venue.slug}`} />
+        </div>
       </div>
 
       <p className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1">

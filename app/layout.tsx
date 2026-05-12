@@ -16,7 +16,14 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: 'VolleyMaps — Find Pickup Volleyball Near You',
-  description: 'Discover beach and indoor pickup volleyball games near you. Live map, today\'s sessions, and community drop-ins.',
+  description: 'Free map of pickup volleyball games in Toronto. Beach, grass, and indoor sessions. Find a game today.',
+  openGraph: {
+    siteName: 'VolleyMaps',
+    title: 'VolleyMaps — Find Pickup Volleyball Near You',
+    description: 'Free map of pickup volleyball games in Toronto. Beach, grass, and indoor sessions.',
+    url: 'https://volleymaps.vercel.app',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -45,6 +52,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1 min-h-0">
           {children}
         </main>
+
+        <footer className="shrink-0 hidden md:flex items-center justify-center gap-4 px-4 py-2 border-t border-border bg-card text-xs text-muted-foreground">
+          <span>Toronto volleyball, all in one place.</span>
+          <span className="text-border">·</span>
+          <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          <span className="text-border">·</span>
+          <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Use</Link>
+          <span className="text-border">·</span>
+          <Link href="/add-your-game" className="hover:text-foreground transition-colors">Add Your Game</Link>
+        </footer>
       </body>
     </html>
   )
