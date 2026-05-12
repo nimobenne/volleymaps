@@ -17,19 +17,24 @@ export default function AddYourGamePage() {
     const data = new FormData(form)
 
     try {
-      const { pb } = await import('@/lib/pocketbase')
-      await pb.collection('submissions').create({
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      const { error } = await supabase.from('submissions').insert({
         name:         data.get('name'),
         email:        data.get('email'),
         venue_name:   data.get('venue_name'),
         address:      data.get('address'),
         city:         data.get('city'),
         type:         data.get('type'),
-        website:      data.get('website') || undefined,
+        website:      data.get('website') || null,
         schedule:     data.get('schedule'),
-        contact_link: data.get('contact_link') || undefined,
+        contact_link: data.get('contact_link') || null,
         status:       'pending',
       })
+      if (error) throw error
       setSubmitted(true)
     } catch {
       setError('Something went wrong. Please try again.')
