@@ -1,0 +1,64 @@
+import { GameSession } from '@/types'
+
+const TZ = 'America/Toronto'
+
+function getTorontoNow(): { minutes: number; dayOfWeek: number; dateStr: string } {
+  const now = new Date()
+  // Parse Toronto local time using Intl
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    hour: '2-digit', minute: '2-digit', hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    weekday: 'short',
+  }).formatToParts(now)
+
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? '0'
+  const h = parseInt(get('hour'), 10)
+  const m = parseInt(get('minute'), 10)
+  // Reconstruct YYYY-MM-DD
+  const dateStr = `${get('year')}-${get('month')}-${get('day')}`
+  // Get day index Sun=0..Sat=6 from a Date built in Toronto local time
+  const dayOfWeek = new Date(
+    now.toLocaleString('en-US', { timeZone: TZ })
+  ).getDay()
+
+  return { minutes: h * 60 + m, dayOfWeek, dateStr }
+}
+
+export function getTodaysSessions(sessions: GameSession[]): GameSession[] {
+  const { dayOfWeek, dateStr } = getTorontoNow()
+
+  return sessions
+    .filter(s => {
+      if (s.specific_date) return s.specific_date === dateStr
+      if (s.recurring && s.day_of_week !== undefined) return s.day_of_week === dayOfWeek
+      return false
+    })
+    .sort((a, b) => a.start_time.localeCompare(b.start_time))
+}
+
+export function isLiveNow(session: GameSession): boolean {
+  const { minutes } = getTorontoNow()
+  return minutes >= timeToMinutes(session.start_time) && minutes <= timeToMinutes(session.end_time)
+}
+
+export function isStartingSoon(session: GameSession, thresholdMinutes = 30): boolean {
+  const { minutes } = getTorontoNow()
+  const diff = timeToMinutes(session.start_time) - minutes
+  return diff > 0 && diff <= thresholdMinutes
+}
+
+export function formatTime(time: string): string {
+  const [h, m] = time.split(':').map(Number)
+  const period = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 || 12
+  return `${hour}:${m.toString().padStart(2, '0')} ${period}`
+}
+
+export const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+export const DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + m
+}
