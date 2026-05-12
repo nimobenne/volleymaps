@@ -7,7 +7,7 @@ import { DAY_NAMES_FULL } from '@/lib/sessions'
 import Link from 'next/link'
 import { MOCK_VENUES, MOCK_SESSIONS } from '@/lib/mock-data'
 
-const USE_MOCK = !process.env.NEXT_PUBLIC_POCKETBASE_URL
+const USE_MOCK = !process.env.NEXT_PUBLIC_SUPABASE_URL
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -23,18 +23,29 @@ export default async function VenuePage({ params }: PageProps) {
     venue = MOCK_VENUES.find(v => v.slug === slug) ?? null
     allSessions = venue ? MOCK_SESSIONS.filter(s => s.venue_id === venue!.id) : []
   } else {
-    const { pb } = await import('@/lib/pocketbase')
-    const results = await pb.collection('venues').getFullList({
-      filter: `slug = "${slug}" && approved = true`,
-    })
-    venue = results[0] as unknown as Venue ?? null
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const { data: venueData } = await supabase
+      .from('venues')
+      .select('*')
+      .eq('slug', slug)
+      .eq('approved', true)
+      .single()
+
+    venue = venueData as Venue ?? null
 
     if (venue) {
-      const sessions = await pb.collection('game_sessions').getFullList({
-        filter: `venue_id = "${venue.id}"`,
-        sort: 'day_of_week,start_time',
-      })
-      allSessions = sessions as unknown as GameSession[]
+      const { data: sessionData } = await supabase
+        .from('game_sessions')
+        .select('*')
+        .eq('venue_id', venue.id)
+        .order('day_of_week')
+        .order('start_time')
+      allSessions = (sessionData ?? []) as GameSession[]
     }
   }
 
@@ -70,20 +81,13 @@ export default async function VenuePage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Colored accent strip */}
-      <div
-        className="h-1 w-16 rounded-full mb-4"
-        style={{ backgroundColor: venueColor }}
-      />
+      <div className="h-1 w-16 rounded-full mb-4" style={{ backgroundColor: venueColor }} />
 
       <div className="flex items-start justify-between gap-4 mb-2">
         <h1 className="font-display font-bold text-3xl uppercase tracking-wide leading-tight">
           {venue.name}
         </h1>
-        <span
-          className="shrink-0 text-xs font-bold uppercase tracking-widest mt-1.5"
-          style={{ color: venueColor }}
-        >
+        <span className="shrink-0 text-xs font-bold uppercase tracking-widest mt-1.5" style={{ color: venueColor }}>
           {typeLabel}
         </span>
       </div>
