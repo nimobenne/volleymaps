@@ -77,7 +77,30 @@ export default async function VenuePage({ params }: PageProps) {
     : 'oklch(0.70 0.14 218)'
   const typeLabel = venue.type === 'beach' ? '🏖 Beach' : venue.type === 'grass' ? '🌿 Grass' : '🏟 Indoor'
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsActivityLocation',
+    name: venue.name,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: venue.address,
+      addressLocality: venue.city || 'Toronto',
+      addressRegion: 'ON',
+      addressCountry: 'CA',
+    },
+    url: `https://volleymaps.vercel.app/venues/${venue.slug}`,
+    event: allSessions.map(s => ({
+      '@type': 'SportsEvent',
+      name: s.title,
+      location: { '@type': 'Place', name: venue.name, address: venue.address },
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      eventStatus: 'https://schema.org/EventScheduled',
+    })),
+  }
+
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     <div className="max-w-2xl mx-auto px-4 py-8">
       <Link
         href="/"
@@ -154,5 +177,6 @@ export default async function VenuePage({ params }: PageProps) {
         </>
       )}
     </div>
+    </>
   )
 }
