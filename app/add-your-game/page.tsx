@@ -16,6 +16,27 @@ export default function AddYourGamePage() {
     const form = e.currentTarget
     const data = new FormData(form)
 
+    // Honeypot — bots fill this, humans don't
+    if (data.get('website_url')) { setSubmitted(true); return }
+
+    const name = (data.get('name') as string).trim().slice(0, 100)
+    const email = (data.get('email') as string).trim().slice(0, 200)
+    const venue_name = (data.get('venue_name') as string).trim().slice(0, 100)
+    const address = (data.get('address') as string).trim().slice(0, 200)
+    const city = (data.get('city') as string).trim().slice(0, 100)
+    const type = data.get('type') as string
+    const schedule = (data.get('schedule') as string).trim().slice(0, 500)
+    const websiteRaw = (data.get('website') as string).trim()
+    const contactRaw = (data.get('contact_link') as string).trim()
+
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRe.test(email)) { setError('Please enter a valid email address.'); setLoading(false); return }
+
+    const safeUrl = (raw: string) => {
+      if (!raw) return null
+      try { new URL(raw); return raw } catch { return null }
+    }
+
     try {
       const { createClient } = await import('@supabase/supabase-js')
       const supabase = createClient(
@@ -23,15 +44,9 @@ export default function AddYourGamePage() {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       )
       const { error } = await supabase.from('submissions').insert({
-        name:         data.get('name'),
-        email:        data.get('email'),
-        venue_name:   data.get('venue_name'),
-        address:      data.get('address'),
-        city:         data.get('city'),
-        type:         data.get('type'),
-        website:      data.get('website') || null,
-        schedule:     data.get('schedule'),
-        contact_link: data.get('contact_link') || null,
+        name, email, venue_name, address, city, type, schedule,
+        website:      safeUrl(websiteRaw),
+        contact_link: safeUrl(contactRaw),
         status:       'pending',
       })
       if (error) throw error
@@ -75,6 +90,8 @@ export default function AddYourGamePage() {
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {/* Honeypot — hidden from humans, bots fill it */}
+        <input type="text" name="website_url" tabIndex={-1} aria-hidden="true" className="hidden" />
         <Section title="Your info">
           <Field label="Name" name="name" required placeholder="Alex Smith" />
           <Field label="Email" name="email" type="email" required placeholder="you@example.com" />

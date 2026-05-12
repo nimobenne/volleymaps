@@ -12,17 +12,22 @@ interface LiveFeedProps {
   venues: Venue[]
   sessions: GameSession[]
   typeFilter: 'all' | 'beach' | 'indoor' | 'grass'
+  searchQuery?: string
 }
 
-export default function LiveFeed({ venues, sessions, typeFilter }: LiveFeedProps) {
+export default function LiveFeed({ venues, sessions, typeFilter, searchQuery = '' }: LiveFeedProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
   const venueMap = Object.fromEntries(venues.map(v => [v.id, v]))
 
+  const q = searchQuery.toLowerCase()
   const filtered = sessions.filter(s => {
     const venue = venueMap[s.venue_id]
-    return venue && (typeFilter === 'all' || venue.type === typeFilter)
+    if (!venue) return false
+    if (typeFilter !== 'all' && venue.type !== typeFilter) return false
+    if (q && !venue.name.toLowerCase().includes(q) && !venue.address.toLowerCase().includes(q)) return false
+    return true
   })
 
   const { today, upcoming } = getAllSessionsSorted(filtered)
