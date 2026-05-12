@@ -7,22 +7,21 @@ import { Venue, GameSession } from '@/types'
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE } from '@/lib/mapbox'
 import VenuePopover from './VenuePopover'
 
-// Mikasa palette
-const BEACH_COLOR  = '#D97706' // amber-gold
-const INDOOR_COLOR = '#1D4ED8' // cobalt blue
-const GRASS_COLOR  = '#16A34A' // grass green
+const BEACH_COLOR  = '#D97706'
+const INDOOR_COLOR = '#1D4ED8'
+const GRASS_COLOR  = '#16A34A'
 
 interface MapProps {
   venues: Venue[]
   sessions: GameSession[]
   typeFilter: 'all' | 'beach' | 'indoor' | 'grass'
   searchQuery?: string
+  onPinTap?: () => void
 }
 
 function createMarkerElement(venue: Venue, onClick: () => void): HTMLElement {
   const color = venue.type === 'beach' ? BEACH_COLOR : venue.type === 'grass' ? GRASS_COLOR : INDOOR_COLOR
 
-  // wrapper: MapLibre owns the transform on this element (translate3d for positioning)
   const isMobile = window.innerWidth < 768
   const size = isMobile ? 44 : 36
 
@@ -30,7 +29,6 @@ function createMarkerElement(venue: Venue, onClick: () => void): HTMLElement {
   wrapper.style.cssText = `width:${size}px;height:${size}px;cursor:pointer;`
   wrapper.title = venue.name
 
-  // pin: we apply scale() here — never conflicts with MapLibre's transform on wrapper
   const pin = document.createElement('div')
   pin.style.cssText = [
     `width:${size}px`,
@@ -57,11 +55,14 @@ function createMarkerElement(venue: Venue, onClick: () => void): HTMLElement {
   return wrapper
 }
 
-export default function Map({ venues, sessions, typeFilter, searchQuery = '' }: MapProps) {
+export default function Map({ venues, sessions, typeFilter, searchQuery = '', onPinTap }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<{ marker: maplibregl.Marker; venueId: string }[]>([])
+  const onPinTapRef = useRef(onPinTap)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
+
+  useEffect(() => { onPinTapRef.current = onPinTap })
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
@@ -74,6 +75,14 @@ export default function Map({ venues, sessions, typeFilter, searchQuery = '' }: 
     })
 
     mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right')
+    mapRef.current.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: false,
+        showAccuracyCircle: false,
+      }),
+      'top-right'
+    )
     mapRef.current.on('click', () => setSelectedVenue(null))
 
     return () => {
@@ -94,7 +103,10 @@ export default function Map({ venues, sessions, typeFilter, searchQuery = '' }: 
       venues
         .filter(v => typeFilter === 'all' || v.type === typeFilter)
         .forEach(venue => {
-          const el = createMarkerElement(venue, () => setSelectedVenue(venue))
+          const el = createMarkerElement(venue, () => {
+            setSelectedVenue(venue)
+            onPinTapRef.current?.()
+          })
           const matches = !q || venue.name.toLowerCase().includes(q) || venue.address.toLowerCase().includes(q)
           el.style.opacity = matches ? '1' : '0.15'
           const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
