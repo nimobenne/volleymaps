@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { Venue, GameSession } from '@/types'
 import { getTodaysSessions } from '@/lib/sessions'
@@ -20,13 +20,9 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
   const [typeFilter, setTypeFilter] = useState<'all' | 'beach' | 'indoor' | 'grass'>('all')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const touchStartY = useRef<number | null>(null)
 
   const venueMap = Object.fromEntries(venues.map(v => [v.id, v]))
-
-  const filteredVenues = venues.filter(v =>
-    (typeFilter === 'all' || v.type === typeFilter) &&
-    (!searchQuery || v.name.toLowerCase().includes(searchQuery.toLowerCase()) || v.address.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
 
   const todayCount = getTodaysSessions(sessions).filter(s => {
     const venue = venueMap[s.venue_id]
@@ -38,17 +34,34 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
     return venue && (typeFilter === 'all' || venue.type === typeFilter)
   }).length
 
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartY.current === null) return
+    const delta = touchStartY.current - e.changedTouches[0].clientY
+    if (delta > 40) setDrawerOpen(true)
+    if (delta < -40) setDrawerOpen(false)
+    touchStartY.current = null
+  }
+
   return (
     <div className="relative flex h-full overflow-hidden" style={{ height: '100%' }}>
       {/* ─── Map (always full behind) ─── */}
       <div className="relative flex-1">
-        {/* Search + filter bar */}
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-auto flex flex-col items-center gap-2">
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
           <Filters typeFilter={typeFilter} onTypeChange={setTypeFilter} />
         </div>
 
-        <Map venues={venues} sessions={sessions} typeFilter={typeFilter} searchQuery={searchQuery} />
+        <Map
+          venues={venues}
+          sessions={sessions}
+          typeFilter={typeFilter}
+          searchQuery={searchQuery}
+          onPinTap={() => setDrawerOpen(false)}
+        />
       </div>
 
       {/* ─── Desktop sidebar ─── */}
@@ -66,10 +79,11 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
           willChange: 'transform',
         }}
       >
-        {/* Drawer handle / peek bar */}
         <button
-          className="w-full flex flex-col items-center pt-2.5 pb-2 active:bg-muted/40 transition-colors"
+          className="w-full flex flex-col items-center pt-2.5 pb-2 active:bg-muted/40 transition-colors touch-none"
           onClick={() => setDrawerOpen(d => !d)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           aria-label={drawerOpen ? 'Collapse games list' : 'Expand games list'}
           aria-expanded={drawerOpen}
         >
@@ -97,7 +111,6 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
           </div>
         </button>
 
-        {/* Scrollable feed content */}
         <div className="overflow-y-auto overscroll-contain" style={{ height: 'calc(72vh - 88px)' }}>
           <LiveFeed venues={venues} sessions={sessions} typeFilter={typeFilter} searchQuery={searchQuery} />
         </div>
