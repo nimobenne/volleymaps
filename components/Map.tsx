@@ -17,11 +17,11 @@ interface MapProps {
   typeFilter: 'all' | 'beach' | 'indoor' | 'grass'
   searchQuery?: string
   onPinTap?: () => void
+  onGeolocate?: (coords: { lat: number; lng: number }) => void
 }
 
 function createMarkerElement(venue: Venue, onClick: () => void): HTMLElement {
   const color = venue.type === 'beach' ? BEACH_COLOR : venue.type === 'grass' ? GRASS_COLOR : INDOOR_COLOR
-
   const isMobile = window.innerWidth < 768
   const size = isMobile ? 44 : 36
 
@@ -47,7 +47,6 @@ function createMarkerElement(venue: Venue, onClick: () => void): HTMLElement {
   pin.textContent = '🏐'
 
   wrapper.appendChild(pin)
-
   wrapper.addEventListener('mouseenter', () => { pin.style.transform = 'scale(1.25)' })
   wrapper.addEventListener('mouseleave', () => { pin.style.transform = 'scale(1)' })
   wrapper.addEventListener('click', (e) => { e.stopPropagation(); onClick() })
@@ -55,14 +54,16 @@ function createMarkerElement(venue: Venue, onClick: () => void): HTMLElement {
   return wrapper
 }
 
-export default function Map({ venues, sessions, typeFilter, searchQuery = '', onPinTap }: MapProps) {
+export default function Map({ venues, sessions, typeFilter, searchQuery = '', onPinTap, onGeolocate }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<{ marker: maplibregl.Marker; venueId: string }[]>([])
   const onPinTapRef = useRef(onPinTap)
+  const onGeolocateRef = useRef(onGeolocate)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
 
   useEffect(() => { onPinTapRef.current = onPinTap })
+  useEffect(() => { onGeolocateRef.current = onGeolocate })
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
@@ -74,15 +75,18 @@ export default function Map({ venues, sessions, typeFilter, searchQuery = '', on
       zoom: DEFAULT_ZOOM,
     })
 
+    const geoControl = new maplibregl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: false,
+      showAccuracyCircle: false,
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    geoControl.on('geolocate', (e: any) => {
+      onGeolocateRef.current?.({ lat: e.coords.latitude, lng: e.coords.longitude })
+    })
+
     mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right')
-    mapRef.current.addControl(
-      new maplibregl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: false,
-        showAccuracyCircle: false,
-      }),
-      'top-right'
-    )
+    mapRef.current.addControl(geoControl, 'top-right')
     mapRef.current.on('click', () => setSelectedVenue(null))
 
     return () => {
@@ -116,11 +120,8 @@ export default function Map({ venues, sessions, typeFilter, searchQuery = '', on
         })
     }
 
-    if (map.loaded()) {
-      addMarkers()
-    } else {
-      map.once('load', addMarkers)
-    }
+    if (map.loaded()) addMarkers()
+    else map.once('load', addMarkers)
   }, [venues, typeFilter, searchQuery])
 
   return (

@@ -11,28 +11,34 @@ import { ChevronUp, ChevronDown } from 'lucide-react'
 
 const Map = dynamic(() => import('./Map'), { ssr: false })
 
+type TypeFilter = 'all' | 'beach' | 'indoor' | 'grass'
+type SkillFilter = 'all' | 'beginner' | 'intermediate' | 'competitive'
+
 interface HomeClientProps {
   venues: Venue[]
   sessions: GameSession[]
 }
 
 export default function HomeClient({ venues, sessions }: HomeClientProps) {
-  const [typeFilter, setTypeFilter] = useState<'all' | 'beach' | 'indoor' | 'grass'>('all')
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
+  const [skillFilter, setSkillFilter] = useState<SkillFilter>('all')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
   const touchStartY = useRef<number | null>(null)
 
   const venueMap = Object.fromEntries(venues.map(v => [v.id, v]))
 
-  const todayCount = getTodaysSessions(sessions).filter(s => {
+  function sessionMatches(s: GameSession) {
     const venue = venueMap[s.venue_id]
-    return venue && (typeFilter === 'all' || venue.type === typeFilter)
-  }).length
+    if (!venue) return false
+    if (typeFilter !== 'all' && venue.type !== typeFilter) return false
+    if (skillFilter !== 'all' && s.skill_level !== 'all' && s.skill_level !== skillFilter) return false
+    return true
+  }
 
-  const totalCount = sessions.filter(s => {
-    const venue = venueMap[s.venue_id]
-    return venue && (typeFilter === 'all' || venue.type === typeFilter)
-  }).length
+  const todayCount = getTodaysSessions(sessions).filter(sessionMatches).length
+  const totalCount = sessions.filter(sessionMatches).length
 
   function handleTouchStart(e: React.TouchEvent) {
     touchStartY.current = e.touches[0].clientY
@@ -48,11 +54,15 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
 
   return (
     <div className="relative flex h-full overflow-hidden" style={{ height: '100%' }}>
-      {/* ─── Map (always full behind) ─── */}
       <div className="relative flex-1">
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-auto flex flex-col items-center gap-2">
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
-          <Filters typeFilter={typeFilter} onTypeChange={setTypeFilter} />
+          <Filters
+            typeFilter={typeFilter}
+            onTypeChange={setTypeFilter}
+            skillFilter={skillFilter}
+            onSkillChange={setSkillFilter}
+          />
         </div>
 
         <Map
@@ -61,15 +71,21 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
           typeFilter={typeFilter}
           searchQuery={searchQuery}
           onPinTap={() => setDrawerOpen(false)}
+          onGeolocate={setUserCoords}
         />
       </div>
 
-      {/* ─── Desktop sidebar ─── */}
       <aside className="hidden md:flex w-80 lg:w-96 shrink-0 flex-col border-l border-border bg-card overflow-hidden">
-        <LiveFeed venues={venues} sessions={sessions} typeFilter={typeFilter} searchQuery={searchQuery} />
+        <LiveFeed
+          venues={venues}
+          sessions={sessions}
+          typeFilter={typeFilter}
+          skillFilter={skillFilter}
+          searchQuery={searchQuery}
+          userCoords={userCoords}
+        />
       </aside>
 
-      {/* ─── Mobile bottom drawer ─── */}
       <div
         className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-card border-t border-border rounded-t-2xl overflow-hidden"
         style={{
@@ -91,13 +107,9 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
           <div className="flex w-full items-center justify-between px-4">
             <div className="flex items-center gap-2.5">
               <span className="font-display font-bold text-sm uppercase tracking-wide">
-                {todayCount > 0
-                  ? `${todayCount} game${todayCount !== 1 ? 's' : ''} today`
-                  : 'Games this week'}
+                {todayCount > 0 ? `${todayCount} game${todayCount !== 1 ? 's' : ''} today` : 'Games this week'}
               </span>
-              {todayCount > 0 && (
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              )}
+              {todayCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
               {totalCount > 0 && (
                 <span className="text-xs text-muted-foreground font-normal normal-case tracking-normal">
                   {totalCount} total
@@ -112,7 +124,14 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
         </button>
 
         <div className="overflow-y-auto overscroll-contain" style={{ height: 'calc(72vh - 88px)' }}>
-          <LiveFeed venues={venues} sessions={sessions} typeFilter={typeFilter} searchQuery={searchQuery} />
+          <LiveFeed
+            venues={venues}
+            sessions={sessions}
+            typeFilter={typeFilter}
+            skillFilter={skillFilter}
+            searchQuery={searchQuery}
+            userCoords={userCoords}
+          />
         </div>
       </div>
     </div>
