@@ -25,16 +25,40 @@ function getTorontoNow(): { minutes: number; dayOfWeek: number; dateStr: string 
   return { minutes: h * 60 + m, dayOfWeek, dateStr }
 }
 
-export function getTodaysSessions(sessions: GameSession[]): GameSession[] {
+export function isToday(session: GameSession): boolean {
   const { dayOfWeek, dateStr } = getTorontoNow()
+  if (session.specific_date) return session.specific_date === dateStr
+  if (session.recurring && session.day_of_week != null) return session.day_of_week === dayOfWeek
+  return false
+}
 
-  return sessions
-    .filter(s => {
-      if (s.specific_date) return s.specific_date === dateStr
-      if (s.recurring && s.day_of_week !== undefined) return s.day_of_week === dayOfWeek
-      return false
-    })
+export function getTodaysSessions(sessions: GameSession[]): GameSession[] {
+  return sessions.filter(isToday).sort((a, b) => a.start_time.localeCompare(b.start_time))
+}
+
+export function getAllSessionsSorted(sessions: GameSession[]): {
+  today: GameSession[]
+  upcoming: GameSession[]
+} {
+  const { dayOfWeek } = getTorontoNow()
+
+  const today = sessions
+    .filter(isToday)
     .sort((a, b) => a.start_time.localeCompare(b.start_time))
+
+  const upcoming = sessions
+    .filter(s => !isToday(s))
+    .sort((a, b) => {
+      if (a.day_of_week == null && b.day_of_week == null) return a.start_time.localeCompare(b.start_time)
+      if (a.day_of_week == null) return 1
+      if (b.day_of_week == null) return -1
+      const daysA = ((a.day_of_week - dayOfWeek + 7) % 7) || 7
+      const daysB = ((b.day_of_week - dayOfWeek + 7) % 7) || 7
+      if (daysA !== daysB) return daysA - daysB
+      return a.start_time.localeCompare(b.start_time)
+    })
+
+  return { today, upcoming }
 }
 
 export function isLiveNow(session: GameSession): boolean {

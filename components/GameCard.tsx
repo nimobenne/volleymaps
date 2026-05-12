@@ -7,6 +7,7 @@ interface GameCardProps {
   session: GameSession
   venue: Venue
   showVenueName?: boolean
+  dimmed?: boolean
 }
 
 const SKILL_LABEL: Record<string, string> = {
@@ -16,7 +17,7 @@ const SKILL_LABEL: Record<string, string> = {
   competitive: 'Competitive',
 }
 
-export default function GameCard({ session, venue, showVenueName = true }: GameCardProps) {
+export default function GameCard({ session, venue, showVenueName = true, dimmed = false }: GameCardProps) {
   const live = isLiveNow(session)
   const soon = !live && isStartingSoon(session)
   const venueColor = venue.type === 'beach'
@@ -26,7 +27,7 @@ export default function GameCard({ session, venue, showVenueName = true }: GameC
     : 'oklch(0.52 0.23 263)'
 
   return (
-    <div className="group flex gap-3 py-3 border-b border-border last:border-0">
+    <div className={`group flex gap-3 py-3 border-b border-border last:border-0 transition-opacity ${dimmed ? 'opacity-40' : 'opacity-100'}`}>
       {/* Venue type stripe */}
       <div
         className="shrink-0 w-1 rounded-full mt-0.5"
