@@ -3,7 +3,9 @@
 import { Venue, GameSession } from '@/types'
 import { X, MapPin, ExternalLink, ArrowRight } from 'lucide-react'
 import { getTodaysSessions } from '@/lib/sessions'
+import { isNewVenue } from '@/lib/utils'
 import GameCard from './GameCard'
+import WeatherChip from './WeatherChip'
 import Link from 'next/link'
 
 interface VenuePopoverProps {
@@ -44,17 +46,30 @@ export default function VenuePopover({ venue, sessions, onClose }: VenuePopoverP
       <div className="p-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
-            <span
-              className="inline-block text-[10px] font-bold uppercase tracking-widest mb-1"
-              style={{ color: venueColor }}
-            >
-              {typeLabel}
-            </span>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest"
+                style={{ color: venueColor }}
+              >
+                {typeLabel}
+              </span>
+              {isNewVenue(venue) && (
+                <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: 'oklch(0.82 0.17 75 / 20%)', color: 'oklch(0.82 0.17 75)' }}>
+                  New
+                </span>
+              )}
+            </div>
             <h3 className="font-display font-bold text-base leading-tight uppercase tracking-wide">{venue.name}</h3>
             <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
               <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{venue.address}</span>
             </p>
+            {venue.type !== 'indoor' && (
+              <div className="mt-1">
+                <WeatherChip />
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}

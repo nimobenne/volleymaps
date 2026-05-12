@@ -13,6 +13,7 @@ export interface Venue {
   slug: string
   approved: boolean
   city: string
+  created_at?: string
 }
 
 export interface GameSession {
