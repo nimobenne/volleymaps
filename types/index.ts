@@ -31,6 +31,21 @@ export interface GameSession {
   featured: boolean
 }
 
+export interface Submission {
+  id: string
+  name: string
+  email: string
+  venue_name: string
+  address: string
+  city: string
+  type: VenueType
+  website?: string
+  schedule?: string
+  contact_link?: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+}
+
 export interface Filters {
   type: 'all' | VenueType
   skillLevel: 'all' | SkillLevel
