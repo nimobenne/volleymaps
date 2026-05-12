@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { Venue, GameSession } from '@/types'
-import { getTodaysSessions, isLiveNow, isStartingSoon } from '@/lib/sessions'
+import { getAllSessionsSorted, isLiveNow, isStartingSoon } from '@/lib/sessions'
 import GameCard from './GameCard'
 import { Skeleton } from '@/components/ui/skeleton'
+
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 interface LiveFeedProps {
   venues: Venue[]
@@ -18,17 +20,28 @@ export default function LiveFeed({ venues, sessions, typeFilter }: LiveFeedProps
 
   const venueMap = Object.fromEntries(venues.map(v => [v.id, v]))
 
-  const todaysSessions = getTodaysSessions(sessions).filter(s => {
+  const filtered = sessions.filter(s => {
     const venue = venueMap[s.venue_id]
     return venue && (typeFilter === 'all' || venue.type === typeFilter)
   })
 
-  const liveCount = todaysSessions.filter(isLiveNow).length
-  const soonCount = todaysSessions.filter(s => !isLiveNow(s) && isStartingSoon(s)).length
+  const { today, upcoming } = getAllSessionsSorted(filtered)
+
+  const liveCount = today.filter(isLiveNow).length
+  const soonCount = today.filter(s => !isLiveNow(s) && isStartingSoon(s)).length
 
   const dateLabel = new Date().toLocaleDateString('en-CA', {
     weekday: 'long', month: 'long', day: 'numeric',
   })
+
+  // Group upcoming by day_of_week (null = "Flexible")
+  const upcomingByDay: { label: string; sessions: GameSession[] }[] = []
+  for (const s of upcoming) {
+    const label = s.day_of_week != null ? DAY_SHORT[s.day_of_week] : 'Flexible'
+    const existing = upcomingByDay.find(g => g.label === label)
+    if (existing) existing.sessions.push(s)
+    else upcomingByDay.push({ label, sessions: [s] })
+  }
 
   if (!mounted) {
     return (
@@ -76,21 +89,44 @@ export default function LiveFeed({ venues, sessions, typeFilter }: LiveFeedProps
       </div>
 
       <div className="flex-1 overflow-y-auto overscroll-contain">
-        {todaysSessions.length === 0 ? (
+        {today.length === 0 && upcoming.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-6 py-16">
             <span className="text-5xl mb-4 opacity-60">🏐</span>
-            <p className="text-sm font-semibold">No games today</p>
+            <p className="text-sm font-semibold">No sessions found</p>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Browse the map to see weekly schedules at each venue.
+              Try changing the filter or browse the map.
             </p>
           </div>
         ) : (
           <div className="px-4">
-            {todaysSessions.map(session => {
-              const venue = venueMap[session.venue_id]
-              if (!venue) return null
-              return <GameCard key={session.id} session={session} venue={venue} showVenueName />
-            })}
+            {today.length > 0 && (
+              today.map(session => {
+                const venue = venueMap[session.venue_id]
+                if (!venue) return null
+                return <GameCard key={session.id} session={session} venue={venue} showVenueName />
+              })
+            )}
+
+            {today.length === 0 && (
+              <p className="text-xs text-muted-foreground py-4">No games today. Check back or browse the week below.</p>
+            )}
+
+            {upcomingByDay.length > 0 && (
+              <div className="mt-2">
+                {upcomingByDay.map(({ label, sessions: daySessions }) => (
+                  <div key={label}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 pt-4 pb-1">
+                      {label}
+                    </p>
+                    {daySessions.map(session => {
+                      const venue = venueMap[session.venue_id]
+                      if (!venue) return null
+                      return <GameCard key={session.id} session={session} venue={venue} showVenueName dimmed />
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
