@@ -196,11 +196,6 @@ export default function LiveFeed({
         )}
       </div>
 
-      <div className="px-4 py-3 border-t border-border">
-        <a href="/add-your-game" className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors py-1">
-          + Add your game or venue
-        </a>
-      </div>
     </div>
   )
 }

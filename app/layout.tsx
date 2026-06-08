@@ -65,8 +65,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span className="text-border">·</span>
           <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Use</Link>
           <span className="text-border">·</span>
-          <Link href="/add-your-game" className="hover:text-foreground transition-colors">Add Your Game</Link>
-          <span className="text-border">·</span>
           <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
         </footer>
       </body>
