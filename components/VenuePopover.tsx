@@ -1,7 +1,7 @@
 'use client'
 
 import { Venue, GameSession } from '@/types'
-import { X, MapPin, ExternalLink, ArrowRight } from 'lucide-react'
+import { X, MapPin, ExternalLink, ArrowRight, Navigation } from 'lucide-react'
 import { getTodaysSessions } from '@/lib/sessions'
 import { isNewVenue } from '@/lib/utils'
 import GameCard from './GameCard'
@@ -65,6 +65,14 @@ export default function VenuePopover({ venue, sessions, onClose }: VenuePopoverP
               <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{venue.address}</span>
             </p>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${venue.address}, ${venue.city || 'Toronto'}, ON`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors mt-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
+            >
+              <Navigation className="h-3 w-3" /> Get directions
+            </a>
             {venue.type !== 'indoor' && (
               <div className="mt-1">
                 <WeatherChip />
