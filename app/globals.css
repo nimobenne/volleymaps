@@ -82,6 +82,13 @@
   --soon:   oklch(0.87 0.190 105);  /* bright lemon yellow */
 }
 
+@keyframes ping {
+  75%, 100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
