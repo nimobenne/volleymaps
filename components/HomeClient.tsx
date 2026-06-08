@@ -13,6 +13,7 @@ const Map = dynamic(() => import('./Map'), { ssr: false })
 
 type TypeFilter = 'all' | 'beach' | 'indoor' | 'grass'
 type SkillFilter = 'all' | 'beginner' | 'intermediate' | 'competitive'
+type DayFilter = 'all' | 'today' | 'weekend'
 
 interface HomeClientProps {
   venues: Venue[]
@@ -22,6 +23,7 @@ interface HomeClientProps {
 export default function HomeClient({ venues, sessions }: HomeClientProps) {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [skillFilter, setSkillFilter] = useState<SkillFilter>('all')
+  const [dayFilter, setDayFilter] = useState<DayFilter>('all')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -62,6 +64,8 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
             onTypeChange={setTypeFilter}
             skillFilter={skillFilter}
             onSkillChange={setSkillFilter}
+            dayFilter={dayFilter}
+            onDayChange={setDayFilter}
           />
         </div>
 
@@ -81,8 +85,10 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
           sessions={sessions}
           typeFilter={typeFilter}
           skillFilter={skillFilter}
+          dayFilter={dayFilter}
           searchQuery={searchQuery}
           userCoords={userCoords}
+          onClearFilters={() => { setTypeFilter('all'); setSkillFilter('all'); setDayFilter('all'); setSearchQuery('') }}
         />
       </aside>
 
@@ -129,8 +135,10 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
             sessions={sessions}
             typeFilter={typeFilter}
             skillFilter={skillFilter}
+            dayFilter={dayFilter}
             searchQuery={searchQuery}
             userCoords={userCoords}
+            onClearFilters={() => { setTypeFilter('all'); setSkillFilter('all'); setDayFilter('all'); setSearchQuery('') }}
           />
         </div>
       </div>
