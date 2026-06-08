@@ -16,8 +16,10 @@ interface LiveFeedProps {
   sessions: GameSession[]
   typeFilter: 'all' | 'beach' | 'indoor' | 'grass'
   skillFilter?: SkillFilter
+  dayFilter?: 'all' | 'today' | 'weekend'
   searchQuery?: string
   userCoords?: { lat: number; lng: number } | null
+  onClearFilters?: () => void
 }
 
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -28,8 +30,12 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): num
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+function isWeekendDay(dayOfWeek?: number): boolean {
+  return dayOfWeek === 0 || dayOfWeek === 6
+}
+
 export default function LiveFeed({
-  venues, sessions, typeFilter, skillFilter = 'all', searchQuery = '', userCoords,
+  venues, sessions, typeFilter, skillFilter = 'all', dayFilter = 'all', searchQuery = '', userCoords, onClearFilters,
 }: LiveFeedProps) {
   const [mounted, setMounted] = useState(false)
   const [sortByDistance, setSortByDistance] = useState(false)
@@ -43,6 +49,7 @@ export default function LiveFeed({
     if (!venue) return false
     if (typeFilter !== 'all' && venue.type !== typeFilter) return false
     if (skillFilter !== 'all' && s.skill_level !== 'all' && s.skill_level !== skillFilter) return false
+    if (dayFilter === 'weekend' && !isWeekendDay(s.day_of_week)) return false
     if (q && !venue.name.toLowerCase().includes(q) && !venue.address.toLowerCase().includes(q)) return false
     return true
   })
@@ -132,8 +139,16 @@ export default function LiveFeed({
             <span className="text-5xl mb-4 opacity-60">🏐</span>
             <p className="text-sm font-semibold">No sessions found</p>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Try changing the filter or browse the map.
+              No games match your current filters.
             </p>
+            {onClearFilters && (
+              <button
+                onClick={onClearFilters}
+                className="mt-4 px-4 py-2 rounded-full text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="px-4">
