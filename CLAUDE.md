@@ -5,7 +5,7 @@ A web app for finding pickup and drop-in volleyball games (beach + indoor) on an
 ## Stack
 
 - **Next.js 16** (App Router, TypeScript)
-- **PocketBase** — open-source BaaS, SQLite, hosted on Fly.io (Toronto region `yyz`)
+- **Supabase** — Postgres, RLS, hosted on Supabase cloud
 - **MapLibre GL JS** + CartoDB Voyager tiles — free, no API key needed
 - **shadcn/ui** + Tailwind CSS
 - **Vercel** — Next.js hosting
@@ -13,25 +13,20 @@ A web app for finding pickup and drop-in volleyball games (beach + indoor) on an
 ## Env vars
 
 Copy `.env.local.example` → `.env.local`:
-- `NEXT_PUBLIC_POCKETBASE_URL=http://127.0.0.1:8090` (local)
-- `NEXT_PUBLIC_POCKETBASE_URL=https://volleymaps-pb.fly.dev` (production)
+- `NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...`
 
 Falls back to mock data (`lib/mock-data.ts`) when env var is not set.
 
-## PocketBase setup
+## Supabase setup
 
-Scripts in `scripts/` handle collection creation and seeding:
-- `setup-pocketbase.mjs` — creates 3 collections (venues, game_sessions, submissions)
-- `set-rules.mjs` — sets public read rules on venues + game_sessions
-- `seed-pocketbase.mjs` — seeds 9 Toronto venues + 16 sessions
+Schema: `mdfiles/supabase-schema.sql` — run in Supabase SQL Editor.
 
-Run order: setup → set-rules → seed
+Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
 
-PocketBase admin: `http://127.0.0.1:8090/_/` (local) or `https://volleymaps-pb.fly.dev/_/` (prod)
+## Tables
 
-## Collections
-
-- **venues** — name, type (beach/indoor), address, city, lat, lng, slug, approved, website, photo_url
+- **venues** — name, type (beach/grass/indoor), address, city, lat, lng, slug, approved, website, photo_url
 - **game_sessions** — venue_id, title, day_of_week (0=Sun), specific_date, start_time, end_time, recurring, skill_level, notes, contact_link, featured
 - **submissions** — name, email, venue_name, address, city, type, website, schedule, contact_link, status (pending/approved/rejected)
 
@@ -78,17 +73,16 @@ scripts/
 ## Current status
 
 - [x] Full UI built — map, live feed, filters, mobile drawer, venue detail
-- [x] PocketBase collections created and seeded (9 venues, 16 sessions)
-- [x] Submission form wired to PocketBase
-- [x] Public read rules set on collections
-- [ ] Deploy PocketBase to Fly.io
-- [ ] Deploy Next.js to Vercel with production env var
+- [x] Supabase schema + 9 venues / 16 sessions seeded
+- [x] Submission form wired to Supabase submissions table
+- [x] RLS policies set (public read approved venues + sessions, public insert submissions)
+- [x] Deployed on Vercel at https://volleymaps.vercel.app/ with real data
+- [x] GitHub: https://github.com/nimobenne/volleymaps
 
 ## Next up
 
-- Deploy PocketBase to Fly.io (`mdfiles/pocketbase-setup.md` has full steps)
-- Set `NEXT_PUBLIC_POCKETBASE_URL` in Vercel dashboard
-- Phase 2: organizer portal
+- Phase 2: organizer portal (Supabase Auth)
+- Phase 2: admin approval flow for submissions
 - Phase 3: featured listings + Stripe
 
 ---

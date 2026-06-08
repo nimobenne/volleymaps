@@ -55,7 +55,7 @@ export default function TermsPage() {
 
         <section className="flex flex-col gap-2">
           <h2 className="font-display font-bold text-lg uppercase tracking-wide text-foreground">Contact</h2>
-          <p>Questions about these terms? Email <a href="mailto:bernoubenne@me.com" className="text-primary hover:underline">bernoubenne@me.com</a>.</p>
+          <p>Questions about these terms? Email <a href="mailto:nimobenne@gmail.com" className="text-primary hover:underline">nimobenne@gmail.com</a>.</p>
         </section>
 
       </div>
