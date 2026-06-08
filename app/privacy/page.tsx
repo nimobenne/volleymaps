@@ -24,7 +24,7 @@ export default function PrivacyPage() {
 
         <section className="flex flex-col gap-2">
           <h2 className="font-display font-bold text-lg uppercase tracking-wide text-foreground">Who we are</h2>
-          <p>VolleyMaps is a free, community-run directory of volleyball pickup games and sessions in Toronto, Canada. It is operated by Nimo Hains Benne. Questions? Email <a href="mailto:bernoubenne@me.com" className="text-primary hover:underline">bernoubenne@me.com</a>.</p>
+          <p>VolleyMaps is a free, community-run directory of volleyball pickup games and sessions in Toronto, Canada. It is operated by Nimo Hains Benne. Questions? Email <a href="mailto:nimobenne@gmail.com" className="text-primary hover:underline">nimobenne@gmail.com</a>.</p>
         </section>
 
         <section className="flex flex-col gap-2">
@@ -62,7 +62,7 @@ export default function PrivacyPage() {
             <li>Correct inaccurate information</li>
             <li>Request deletion of your personal information</li>
           </ul>
-          <p>To exercise any of these rights, email <a href="mailto:bernoubenne@me.com" className="text-primary hover:underline">bernoubenne@me.com</a>. We will respond within 30 days.</p>
+          <p>To exercise any of these rights, email <a href="mailto:nimobenne@gmail.com" className="text-primary hover:underline">nimobenne@gmail.com</a>. We will respond within 30 days.</p>
         </section>
 
         <section className="flex flex-col gap-2">
