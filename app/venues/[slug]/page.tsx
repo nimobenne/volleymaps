@@ -2,7 +2,7 @@ import { Venue, GameSession } from '@/types'
 import { notFound } from 'next/navigation'
 import GameCard from '@/components/GameCard'
 import ShareButton from '@/components/ShareButton'
-import { MapPin, ExternalLink, ArrowLeft } from 'lucide-react'
+import { MapPin, ExternalLink, ArrowLeft, Waves, Trees, Building2, Navigation } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { DAY_NAMES_FULL } from '@/lib/sessions'
 import Link from 'next/link'
@@ -75,7 +75,8 @@ export default async function VenuePage({ params }: PageProps) {
     : venue.type === 'grass'
     ? 'oklch(0.55 0.18 145)'
     : 'oklch(0.70 0.14 218)'
-  const typeLabel = venue.type === 'beach' ? '🏖 Beach' : venue.type === 'grass' ? '🌿 Grass' : '🏟 Indoor'
+  const TypeIcon = venue.type === 'beach' ? Waves : venue.type === 'grass' ? Trees : Building2
+  const typeLabel = venue.type === 'beach' ? 'Beach' : venue.type === 'grass' ? 'Grass' : 'Indoor'
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -109,21 +110,36 @@ export default async function VenuePage({ params }: PageProps) {
         <ArrowLeft className="h-4 w-4" /> Back to map
       </Link>
 
-      {venue.photo_url && (
-        <div className="h-52 w-full rounded-xl overflow-hidden mb-6 border border-border">
+      {/* Hero: photo if available, gradient fallback otherwise */}
+      <div className="h-52 w-full rounded-xl overflow-hidden mb-6 border border-border">
+        {venue.photo_url ? (
           <img src={venue.photo_url} alt={venue.name} className="w-full h-full object-cover" />
-        </div>
-      )}
-
-      <div className="h-1 w-16 rounded-full mb-4" style={{ backgroundColor: venueColor }} />
+        ) : (
+          <div
+            className="w-full h-full flex items-end p-4"
+            style={{
+              background: venue.type === 'beach'
+                ? 'linear-gradient(135deg, oklch(0.25 0.06 75) 0%, oklch(0.18 0.03 75) 100%)'
+                : venue.type === 'grass'
+                ? 'linear-gradient(135deg, oklch(0.22 0.06 145) 0%, oklch(0.17 0.03 145) 100%)'
+                : 'linear-gradient(135deg, oklch(0.22 0.06 263) 0%, oklch(0.17 0.03 263) 100%)',
+            }}
+          >
+            <span className="font-display font-bold text-5xl uppercase tracking-wide opacity-20"
+              style={{ color: venueColor }}>
+              {venue.type}
+            </span>
+          </div>
+        )}
+      </div>
 
       <div className="flex items-start justify-between gap-4 mb-2">
         <h1 className="font-display font-bold text-3xl uppercase tracking-wide leading-tight">
           {venue.name}
         </h1>
         <div className="flex items-center gap-2 shrink-0 mt-1">
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: venueColor }}>
-            {typeLabel}
+          <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest" style={{ color: venueColor }}>
+            <TypeIcon className="h-3.5 w-3.5" /> {typeLabel}
           </span>
           <ShareButton url={`https://volleymaps.vercel.app/venues/${venue.slug}`} />
         </div>
@@ -133,6 +149,14 @@ export default async function VenuePage({ params }: PageProps) {
         <MapPin className="h-4 w-4 shrink-0" />
         {venue.address}{venue.city ? `, ${venue.city}` : ''}
       </p>
+      <a
+        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${venue.address}, ${venue.city || 'Toronto'}, ON`)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-1 mb-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
+      >
+        <Navigation className="h-3 w-3" /> Get directions
+      </a>
 
       {venue.website && (
         <a
