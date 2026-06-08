@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Barlow_Condensed, DM_Sans } from 'next/font/google'
 import './globals.css'
 import Link from 'next/link'
+import { Analytics } from '@vercel/analytics/next'
 
 const barlowCondensed = Barlow_Condensed({
   variable: '--font-barlow-condensed',
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span className="text-border">·</span>
           <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
         </footer>
+        <Analytics />
       </body>
     </html>
   )
