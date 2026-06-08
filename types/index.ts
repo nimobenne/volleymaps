@@ -1,5 +1,6 @@
 export type VenueType = 'beach' | 'indoor' | 'grass'
 export type SkillLevel = 'all' | 'beginner' | 'intermediate' | 'competitive'
+export type CostType = 'free' | 'paid' | 'registration' | 'unknown'
 
 export interface Venue {
   id: string
@@ -30,6 +31,9 @@ export interface GameSession {
   notes?: string
   contact_link?: string
   featured: boolean
+  cost_type?: CostType
+  cost_cents?: number | null
+  cost_label?: string | null
 }
 
 export interface Submission {
