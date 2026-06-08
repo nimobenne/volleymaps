@@ -7,6 +7,7 @@ import { buildCalendarUrls } from '@/lib/calendar'
 import { ExternalLink, CalendarPlus } from 'lucide-react'
 import Link from 'next/link'
 import RsvpButton from './RsvpButton'
+import CostChip from './CostChip'
 
 interface GameCardProps {
   session: GameSession
@@ -84,32 +85,27 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
-          {dateDisplay && (
-            <>
-              <span className="text-xs text-muted-foreground">{dateDisplay}</span>
-              <span className="text-muted-foreground/30 text-xs">·</span>
-            </>
-          )}
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {formatTime(session.start_time)} – {formatTime(session.end_time)}
-          </span>
-          <span className="text-muted-foreground/30 text-xs">·</span>
-          <span className="text-xs text-muted-foreground">{SKILL_LABEL[session.skill_level]}</span>
+        {/* Time is the bold anchor */}
+        <p className="text-sm font-bold tabular-nums mt-0.5" style={{ color: 'oklch(0.88 0.020 75)' }}>
+          {formatTime(session.start_time)} – {formatTime(session.end_time)}
+          {dateDisplay && <span className="font-normal text-muted-foreground ml-1.5">{dateDisplay}</span>}
+        </p>
+
+        {/* Chips row */}
+        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+          <span className="text-[11px] text-muted-foreground">{SKILL_LABEL[session.skill_level]}</span>
+          <CostChip costType={session.cost_type} costCents={session.cost_cents} costLabel={session.cost_label} />
           {isOneTime && (
-            <>
-              <span className="text-muted-foreground/30 text-xs">·</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: 'oklch(0.52 0.23 263 / 15%)', color: 'oklch(0.70 0.14 218)' }}>
-                One-time
-              </span>
-            </>
+            <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: 'oklch(0.52 0.23 263 / 15%)', color: 'oklch(0.70 0.14 218)' }}>
+              One-time
+            </span>
           )}
           {session.featured && (
-            <>
-              <span className="text-muted-foreground/30 text-xs">·</span>
-              <span className="text-xs font-medium" style={{ color: 'oklch(0.82 0.17 75)' }}>Featured</span>
-            </>
+            <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: 'oklch(0.82 0.17 75 / 15%)', color: 'oklch(0.82 0.17 75)' }}>
+              Featured
+            </span>
           )}
         </div>
 
@@ -124,7 +120,7 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
                 href={session.contact_link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline transition-colors"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
               >
                 Join / register <ExternalLink className="h-3 w-3" />
               </a>
@@ -137,7 +133,7 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
             <div className="relative" ref={calRef}>
               <button
                 onClick={() => setCalOpen(o => !o)}
-                className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 aria-label="Add to calendar"
               >
                 <CalendarPlus className="h-3.5 w-3.5" />
@@ -149,17 +145,17 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setCalOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2.5 text-xs hover:bg-muted transition-colors"
+                    className="flex items-center gap-2 px-3 py-2.5 text-xs hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
                   >
-                    <span>📅</span> Google Calendar
+                    <CalendarPlus className="h-3.5 w-3.5 text-muted-foreground" /> Google Calendar
                   </a>
                   <a
                     href={icsUri}
                     download={`${session.title.replace(/\s+/g, '-').toLowerCase()}.ics`}
                     onClick={() => setCalOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2.5 text-xs hover:bg-muted transition-colors border-t border-border"
+                    className="flex items-center gap-2 px-3 py-2.5 text-xs hover:bg-muted transition-colors border-t border-border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
                   >
-                    <span>🍎</span> Apple / iCal
+                    <CalendarPlus className="h-3.5 w-3.5 text-muted-foreground" /> Apple / iCal
                   </a>
                 </div>
               )}
