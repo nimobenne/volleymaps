@@ -6,10 +6,8 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { Venue, GameSession } from '@/types'
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE } from '@/lib/mapbox'
 import VenuePopover from './VenuePopover'
-
-const BEACH_COLOR  = '#D97706'
-const INDOOR_COLOR = '#1D4ED8'
-const GRASS_COLOR  = '#16A34A'
+import { createPinElement, TYPE_COLORS } from './MapPin'
+import { isLiveNow } from '@/lib/sessions'
 
 interface MapProps {
   venues: Venue[]
@@ -20,39 +18,6 @@ interface MapProps {
   onGeolocate?: (coords: { lat: number; lng: number }) => void
 }
 
-function createMarkerElement(venue: Venue, onClick: () => void): HTMLElement {
-  const color = venue.type === 'beach' ? BEACH_COLOR : venue.type === 'grass' ? GRASS_COLOR : INDOOR_COLOR
-  const isMobile = window.innerWidth < 768
-  const size = isMobile ? 44 : 36
-
-  const wrapper = document.createElement('div')
-  wrapper.style.cssText = `width:${size}px;height:${size}px;cursor:pointer;`
-  wrapper.title = venue.name
-
-  const pin = document.createElement('div')
-  pin.style.cssText = [
-    `width:${size}px`,
-    `height:${size}px`,
-    'border-radius:50%',
-    'border:2.5px solid rgba(255,255,255,0.95)',
-    'display:flex',
-    'align-items:center',
-    'justify-content:center',
-    `font-size:${isMobile ? 20 : 16}px`,
-    `background-color:${color}`,
-    'box-shadow:0 0 0 3px rgba(0,0,0,0.25),0 4px 12px rgba(0,0,0,0.35)',
-    'transition:transform 0.18s cubic-bezier(0.34,1.56,0.64,1)',
-    'will-change:transform',
-  ].join(';')
-  pin.textContent = '🏐'
-
-  wrapper.appendChild(pin)
-  wrapper.addEventListener('mouseenter', () => { pin.style.transform = 'scale(1.25)' })
-  wrapper.addEventListener('mouseleave', () => { pin.style.transform = 'scale(1)' })
-  wrapper.addEventListener('click', (e) => { e.stopPropagation(); onClick() })
-
-  return wrapper
-}
 
 export default function Map({ venues, sessions, typeFilter, searchQuery = '', onPinTap, onGeolocate }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -107,13 +72,23 @@ export default function Map({ venues, sessions, typeFilter, searchQuery = '', on
       venues
         .filter(v => typeFilter === 'all' || v.type === typeFilter)
         .forEach(venue => {
-          const el = createMarkerElement(venue, () => {
+          const venueSessions = sessions.filter(s => s.venue_id === venue.id)
+          const hasLive = venueSessions.some(s => isLiveNow(s))
+          const color = TYPE_COLORS[venue.type] ?? TYPE_COLORS.indoor
+          const el = createPinElement({
+            color,
+            isLive: hasLive,
+            isMobile: window.innerWidth < 768,
+          })
+          el.title = venue.name
+          const matches = !q || venue.name.toLowerCase().includes(q) || venue.address.toLowerCase().includes(q)
+          el.style.opacity = matches ? '1' : '0.15'
+          el.addEventListener('click', (e) => {
+            e.stopPropagation()
             setSelectedVenue(venue)
             onPinTapRef.current?.()
           })
-          const matches = !q || venue.name.toLowerCase().includes(q) || venue.address.toLowerCase().includes(q)
-          el.style.opacity = matches ? '1' : '0.15'
-          const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+          const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
             .setLngLat([venue.lng, venue.lat])
             .addTo(map)
           markersRef.current.push({ marker, venueId: venue.id })
