@@ -60,7 +60,7 @@
   --secondary-foreground:oklch(0.94 0.010 75);
 
   --muted:               oklch(0.21 0.008 65);
-  --muted-foreground:    oklch(0.56 0.020 70);
+  --muted-foreground:    oklch(0.65 0.020 70);
 
   --accent:              oklch(0.22 0.008 65);
   --accent-foreground:   oklch(0.94 0.010 75);
@@ -98,5 +98,10 @@
   }
   html {
     @apply font-sans;
+  }
+  :focus-visible {
+    outline: 2px solid oklch(0.82 0.170 75);
+    outline-offset: 2px;
+    border-radius: 3px;
   }
 }
