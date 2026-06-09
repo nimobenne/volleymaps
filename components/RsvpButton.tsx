@@ -7,12 +7,16 @@ interface RsvpButtonProps {
 }
 
 function getToken(): string {
-  let token = localStorage.getItem('vm_token')
-  if (!token) {
-    token = crypto.randomUUID()
+  const today = new Date().toISOString().slice(0, 10)
+  const stored = localStorage.getItem('vm_token')
+  const storedDay = localStorage.getItem('vm_token_day')
+  if (!stored || storedDay !== today) {
+    const token = crypto.randomUUID()
     localStorage.setItem('vm_token', token)
+    localStorage.setItem('vm_token_day', today)
+    return token
   }
-  return token
+  return stored
 }
 
 export default function RsvpButton({ sessionId }: RsvpButtonProps) {

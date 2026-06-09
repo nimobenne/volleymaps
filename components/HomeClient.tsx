@@ -57,7 +57,7 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
   return (
     <div className="relative flex h-full overflow-hidden" style={{ height: '100%' }}>
       <div className="relative flex-1">
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-auto flex flex-col items-center gap-2">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-auto flex flex-col items-center gap-2 w-[calc(100vw-1rem)] sm:w-auto">
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
           <Filters
             typeFilter={typeFilter}
