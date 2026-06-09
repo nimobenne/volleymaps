@@ -23,7 +23,6 @@ export function createPinElement({ color, isLive, isMobile }: PinOptions): HTMLE
     `width:${pinW}px`,
     `height:${pinH}px`,
     'cursor:pointer',
-    'position:relative',
     'will-change:transform',   // stable compositing layer — prevents zoom-repaint artifacts
     'display:flex',
     'align-items:center',

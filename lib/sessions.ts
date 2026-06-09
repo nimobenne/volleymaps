@@ -62,11 +62,13 @@ export function getAllSessionsSorted(sessions: GameSession[]): {
 }
 
 export function isLiveNow(session: GameSession): boolean {
+  if (!isToday(session)) return false
   const { minutes } = getTorontoNow()
   return minutes >= timeToMinutes(session.start_time) && minutes <= timeToMinutes(session.end_time)
 }
 
 export function isStartingSoon(session: GameSession, thresholdMinutes = 30): boolean {
+  if (!isToday(session)) return false
   const { minutes } = getTorontoNow()
   const diff = timeToMinutes(session.start_time) - minutes
   return diff > 0 && diff <= thresholdMinutes
