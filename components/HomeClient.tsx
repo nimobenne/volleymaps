@@ -73,6 +73,8 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
           venues={venues}
           sessions={sessions}
           typeFilter={typeFilter}
+          skillFilter={skillFilter}
+          dayFilter={dayFilter}
           searchQuery={searchQuery}
           onPinTap={() => setDrawerOpen(false)}
           onGeolocate={setUserCoords}

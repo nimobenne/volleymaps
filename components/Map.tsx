@@ -7,19 +7,21 @@ import { Venue, GameSession } from '@/types'
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE } from '@/lib/mapbox'
 import VenuePopover from './VenuePopover'
 import { createPinElement, TYPE_COLORS } from './MapPin'
-import { isLiveNow } from '@/lib/sessions'
+import { isLiveNow, isToday } from '@/lib/sessions'
 
 interface MapProps {
   venues: Venue[]
   sessions: GameSession[]
   typeFilter: 'all' | 'beach' | 'indoor' | 'grass'
+  skillFilter?: 'all' | 'beginner' | 'intermediate' | 'competitive'
+  dayFilter?: 'all' | 'today' | 'weekend'
   searchQuery?: string
   onPinTap?: () => void
   onGeolocate?: (coords: { lat: number; lng: number }) => void
 }
 
 
-export default function Map({ venues, sessions, typeFilter, searchQuery = '', onPinTap, onGeolocate }: MapProps) {
+export default function Map({ venues, sessions, typeFilter, skillFilter = 'all', dayFilter = 'all', searchQuery = '', onPinTap, onGeolocate }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<{ marker: maplibregl.Marker; venueId: string }[]>([])
@@ -73,6 +75,15 @@ export default function Map({ venues, sessions, typeFilter, searchQuery = '', on
         .filter(v => typeFilter === 'all' || v.type === typeFilter)
         .forEach(venue => {
           const venueSessions = sessions.filter(s => s.venue_id === venue.id)
+
+          // Check which sessions survive the day + skill filters
+          const visibleSessions = venueSessions.filter(s => {
+            if (dayFilter === 'today' && !isToday(s)) return false
+            if (dayFilter === 'weekend' && s.day_of_week !== 0 && s.day_of_week !== 6) return false
+            if (skillFilter !== 'all' && s.skill_level !== 'all' && s.skill_level !== skillFilter) return false
+            return true
+          })
+
           const hasLive = venueSessions.some(s => isLiveNow(s))
           const color = TYPE_COLORS[venue.type] ?? TYPE_COLORS.indoor
           const el = createPinElement({
@@ -81,8 +92,9 @@ export default function Map({ venues, sessions, typeFilter, searchQuery = '', on
             isMobile: window.innerWidth < 768,
           })
           el.title = venue.name
-          const matches = !q || venue.name.toLowerCase().includes(q) || venue.address.toLowerCase().includes(q)
-          el.style.opacity = matches ? '1' : '0.15'
+          const searchMatch = !q || venue.name.toLowerCase().includes(q) || venue.address.toLowerCase().includes(q)
+          const filterMatch = visibleSessions.length > 0
+          el.style.opacity = searchMatch && filterMatch ? '1' : '0.15'
           el.addEventListener('click', (e) => {
             e.stopPropagation()
             setSelectedVenue(venue)
@@ -97,7 +109,7 @@ export default function Map({ venues, sessions, typeFilter, searchQuery = '', on
 
     if (map.loaded()) addMarkers()
     else map.once('load', addMarkers)
-  }, [venues, sessions, typeFilter, searchQuery])
+  }, [venues, sessions, typeFilter, skillFilter, dayFilter, searchQuery])
 
   return (
     <div className="relative w-full h-full">

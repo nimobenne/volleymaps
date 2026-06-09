@@ -1,90 +1,119 @@
 # VolleyMaps
 
-A web app for finding pickup and drop-in volleyball games (beach + indoor) on an interactive map. Organizers opt in to be listed. Monetization planned via featured listings.
+<CONTEXT name="project">
+Toronto volleyball pickup game finder. Organizers opt in to be listed. Monetization planned via featured listings. Live at https://volleymaps.vercel.app/
+</CONTEXT>
 
-## Stack
-
+<STACK>
 - **Next.js 16** (App Router, TypeScript)
 - **Supabase** — Postgres, RLS, hosted on Supabase cloud
 - **MapLibre GL JS** + CartoDB Voyager tiles — free, no API key needed
-- **shadcn/ui** + Tailwind CSS
-- **Vercel** — Next.js hosting
+- **shadcn/ui** + Tailwind CSS v4
+- **Vercel** — production hosting
+</STACK>
 
+<CONTEXT name="env-vars">
 ## Env vars
 
 Copy `.env.local.example` → `.env.local`:
-- `NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (admin mutations + newsletter)
+- `ADMIN_PASSWORD` (admin login)
 
-Falls back to mock data (`lib/mock-data.ts`) when env var is not set.
+Falls back to mock data (`lib/mock-data.ts`) when env vars are not set.
+</CONTEXT>
 
+<CONTEXT name="supabase">
 ## Supabase setup
 
-Schema: `mdfiles/supabase-schema.sql` — run in Supabase SQL Editor.
+Run migrations in order in Supabase SQL Editor. Latest: `supabase/schema-v7.sql` (adds cost_type/cost_cents/cost_label to game_sessions — run this if not yet applied).
 
 Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
+</CONTEXT>
 
+<CONTEXT name="tables">
 ## Tables
 
 - **venues** — name, type (beach/grass/indoor), address, city, lat, lng, slug, approved, website, photo_url
-- **game_sessions** — venue_id, title, day_of_week (0=Sun), specific_date, start_time, end_time, recurring, skill_level, notes, contact_link, featured
+- **game_sessions** — venue_id, title, day_of_week (0=Sun), specific_date, start_time, end_time, recurring, skill_level, notes, contact_link, featured, cost_type, cost_cents, cost_label
 - **submissions** — name, email, venue_name, address, city, type, website, schedule, contact_link, status (pending/approved/rejected)
+- **newsletter_subscribers** — email
+- **rsvps** — planned (not yet built)
+</CONTEXT>
 
+<CONTEXT name="structure">
 ## Project structure
 
 ```
 app/
-  page.tsx                 — homepage (server, fetches venues + sessions)
+  page.tsx                 — homepage (server, ISR revalidate=3600)
   layout.tsx               — header + root layout
   venues/[slug]/page.tsx   — venue detail + full schedule
-  add-your-game/page.tsx   — submission form (writes to PocketBase submissions)
+  add-your-game/page.tsx   — submission form
+  admin/page.tsx           — approve/reject submissions (force-dynamic)
+  admin/login/page.tsx     — cookie-based auth
+  contact/page.tsx         — contact + newsletter signup
+  privacy/page.tsx         — PIPEDA privacy policy
+  terms/page.tsx           — terms of use
 
 components/
-  HomeClient.tsx           — client shell (typeFilter state, mobile drawer)
-  Map.tsx                  — MapLibre map with venue pins (client, ssr: false)
-  VenuePopover.tsx         — card shown when a map pin is clicked
-  LiveFeed.tsx             — today's sessions sidebar (client)
-  GameCard.tsx             — individual session card (live/soon badges)
-  Filters.tsx              — beach / indoor / all toggle
+  HomeClient.tsx           — client shell (type + day filter state, mobile drawer)
+  Map.tsx                  — MapLibre map with teardrop SVG pins (client, ssr: false)
+  MapPin.tsx               — createPinElement() — returns HTMLElement (not React)
+  VenuePopover.tsx         — card on pin click, directions link
+  LiveFeed.tsx             — today's sessions sidebar, day filter support
+  GameCard.tsx             — session card with CostChip, Lucide icons, focus rings
+  Filters.tsx              — type pills + day pills + skill pills
+  CostChip.tsx             — Free/Drop-in/Register colored pill
 
 lib/
-  pocketbase.ts            — PocketBase client
-  mapbox.ts                — CartoDB tile URL + Toronto center coords
-  sessions.ts              — getTodaysSessions, isLiveNow, isStartingSoon (Toronto timezone)
-  mock-data.ts             — fallback data when PocketBase not configured
+  supabase.ts              — Supabase client
+  sessions.ts              — getTodaysSessions, isLiveNow, isStartingSoon (Toronto TZ)
+  mock-data.ts             — fallback data when Supabase not configured
 
-types/index.ts             — Venue, GameSession, Filters interfaces
-
-scripts/
-  setup-pocketbase.mjs     — creates collections
-  set-rules.mjs            — sets access rules
-  seed-pocketbase.mjs      — seeds real Toronto venues
+types/index.ts             — Venue, GameSession, Filters, CostType interfaces
 ```
+</CONTEXT>
 
+<CONTEXT name="design">
 ## Design
 
 "Court Lights" dark theme — warm charcoal bg, amber/gold primary, Mikasa volleyball colors.
 - Beach pins: amber `oklch(0.82 0.17 75)`
 - Indoor pins: cobalt `oklch(0.52 0.23 263)`
-- Live badge: green `oklch(0.68 0.21 145)`
-- Soon badge: yellow `oklch(0.87 0.19 105)`
+- Grass pins: green `oklch(0.55 0.18 145)`
+- Live badge: animated pulse ring via `@keyframes ping`
+- WCAG AA: muted-foreground at `oklch(0.65 0.020 70)`, focus-visible rings on all interactive elements
 - Fonts: Barlow Condensed (display) + DM Sans (body)
+</CONTEXT>
 
-## Current status
+<STATUS>
+## Current status (June 2026)
 
-- [x] Full UI built — map, live feed, filters, mobile drawer, venue detail
-- [x] Supabase schema + 9 venues / 16 sessions seeded
-- [x] Submission form wired to Supabase submissions table
-- [x] RLS policies set (public read approved venues + sessions, public insert submissions)
-- [x] Deployed on Vercel at https://volleymaps.vercel.app/ with real data
-- [x] GitHub: https://github.com/nimobenne/volleymaps
+- [x] Full UX + design overhaul complete and deployed
+- [x] Teardrop SVG map pins with per-type color + live pulse ring
+- [x] Day filter (All / Today / Weekend) in Filters + LiveFeed
+- [x] CostChip (Free / Drop-in / Register) on GameCards
+- [x] Venue detail hero + gradient fallback + directions link
+- [x] WCAG AA contrast + focus rings
+- [x] Admin panel (force-dynamic)
+- [x] Contact email: nimobenne@gmail.com everywhere
+- [x] Deployed to Vercel — https://volleymaps.vercel.app/
+- [ ] **PENDING:** Run `supabase/schema-v7.sql` in Supabase SQL Editor
+- [ ] Cherry Beach organized mixed 6s — add when organizer info available
+</STATUS>
 
+<CONTEXT name="next-up">
 ## Next up
 
-- Phase 2: organizer portal (Supabase Auth)
-- Phase 2: admin approval flow for submissions
-- Phase 3: featured listings + Stripe
+- RSVP counter (anonymous localStorage token, toggle "Going" on GameCard, `rsvps` table)
+- Organizer portal (Supabase Auth)
+- Featured listings + Stripe (monetization)
+- Expand beyond Toronto
+</CONTEXT>
 
+<RULE name="keep-updated">
 ---
 
 ## Keep This File Updated
@@ -95,4 +124,5 @@ At the end of every session, update this file to reflect what changed:
 - Remove anything no longer accurate
 - Refresh what's next / pending
 
-This file is Claude's primary context for this project. Keep it current.
+This file is Claude's primary context for this project. Keep it current. Use XML tags on all sections.
+</RULE>
