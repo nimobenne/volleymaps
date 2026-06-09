@@ -68,10 +68,12 @@ export default function Filters({ typeFilter, onTypeChange, skillFilter, onSkill
   return (
     <div className="flex flex-col items-center gap-1.5">
       <PillRow options={TYPE_OPTIONS} active={typeFilter} onSelect={onTypeChange} pillSize="md" />
-      <div className="flex items-center gap-1.5">
-        <PillRow options={DAY_OPTIONS} active={dayFilter} onSelect={onDayChange} pillSize="sm" />
-        <div className="w-px h-5 bg-border" />
-        <PillRow options={SKILL_OPTIONS} active={skillFilter} onSelect={onSkillChange} pillSize="sm" />
+      <div className="w-full overflow-x-auto">
+        <div className="flex items-center gap-1.5 w-max mx-auto">
+          <PillRow options={DAY_OPTIONS} active={dayFilter} onSelect={onDayChange} pillSize="sm" />
+          <div className="w-px h-5 bg-border shrink-0" />
+          <PillRow options={SKILL_OPTIONS} active={skillFilter} onSelect={onSkillChange} pillSize="sm" />
+        </div>
       </div>
     </div>
   )
