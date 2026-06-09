@@ -97,7 +97,7 @@ export default function Map({ venues, sessions, typeFilter, searchQuery = '', on
 
     if (map.loaded()) addMarkers()
     else map.once('load', addMarkers)
-  }, [venues, typeFilter, searchQuery])
+  }, [venues, sessions, typeFilter, searchQuery])
 
   return (
     <div className="relative w-full h-full">
