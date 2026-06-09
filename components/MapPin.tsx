@@ -12,30 +12,52 @@ export const TYPE_COLORS: Record<string, string> = {
 
 export function createPinElement({ color, isLive, isMobile }: PinOptions): HTMLElement {
   const size = isMobile ? 44 : 36
+  // Maintain the viewBox aspect ratio (36:44 = 9:11) so the teardrop isn't distorted
+  const pinW = size
+  const pinH = Math.round(size * (44 / 36))
+
+  // Wrapper sized exactly to the pin — ring is absolutely positioned but uses pointer-events:none
+  // and does NOT overflow the wrapper's layout box, so MapLibre anchor calc stays accurate.
   const wrapper = document.createElement('div')
-  wrapper.style.cssText = `width:${size}px;height:${size + 8}px;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;`
+  wrapper.style.cssText = [
+    `width:${pinW}px`,
+    `height:${pinH}px`,
+    'cursor:pointer',
+    'position:relative',
+    'will-change:transform',   // stable compositing layer — prevents zoom-repaint artifacts
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+  ].join(';')
 
   if (isLive) {
     const ring = document.createElement('div')
+    // Ring is centered on the pin head (top ~36% of pinH), not the tip
+    const headCY = Math.round(pinH * 0.34)
+    const ringSize = Math.round(pinW * 1.5)
+    const ringOffset = Math.round((ringSize - pinW) / 2)
     ring.style.cssText = [
       'position:absolute',
-      `width:${size + 10}px`,
-      `height:${size + 10}px`,
+      `width:${ringSize}px`,
+      `height:${ringSize}px`,
       'border-radius:50%',
       `border:2px solid ${color}`,
-      'opacity:0.6',
       'animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite',
-      'top:-5px',
-      'left:-5px',
+      'pointer-events:none',
+      `top:${headCY - ringSize / 2}px`,
+      `left:${-ringOffset}px`,
     ].join(';')
     wrapper.appendChild(ring)
   }
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  svg.setAttribute('width', String(size))
-  svg.setAttribute('height', String(size + 8))
+  svg.setAttribute('width', String(pinW))
+  svg.setAttribute('height', String(pinH))
   svg.setAttribute('viewBox', '0 0 36 44')
-  svg.style.cssText = 'filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));transition:transform 0.18s cubic-bezier(0.34,1.56,0.64,1);'
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+  // Use filter on a wrapper element trick: filter on SVG creates compositing layer,
+  // will-change on parent ensures it's stable before MapLibre starts moving it.
+  svg.style.cssText = 'filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45));transition:transform 0.18s cubic-bezier(0.34,1.56,0.64,1);transform:scale(1);'
 
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
   path.setAttribute('d', 'M18 0C9.163 0 2 7.163 2 16c0 10.5 16 28 16 28s16-17.5 16-28C34 7.163 26.837 0 18 0z')
