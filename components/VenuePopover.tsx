@@ -22,7 +22,7 @@ export default function VenuePopover({ venue, sessions, onClose }: VenuePopoverP
   return (
     <div className="
       absolute z-30
-      inset-x-3 bottom-[104px]
+      inset-x-3 bottom-[calc(144px_+_env(safe-area-inset-bottom,0px))]
       md:inset-x-auto md:left-4 md:bottom-6 md:w-80
       rounded-xl border border-border bg-card shadow-2xl shadow-black/50
       overflow-hidden
