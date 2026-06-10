@@ -27,7 +27,7 @@ Falls back to mock data (`lib/mock-data.ts`) when env vars are not set.
 <CONTEXT name="supabase">
 ## Supabase setup
 
-Run migrations in order in Supabase SQL Editor. Latest: `supabase/schema-v7.sql` (adds cost_type/cost_cents/cost_label to game_sessions — run this if not yet applied).
+Run migrations in order in Supabase SQL Editor. Latest: `supabase/schema-v8.sql` (adds the `rsvps` table) — **PENDING manual run; RSVP persistence is inactive until applied.** `schema-v7.sql` (cost_type/cost_cents/cost_label) already applied.
 
 Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
 </CONTEXT>
@@ -39,7 +39,7 @@ Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
 - **game_sessions** — venue_id, title, day_of_week (0=Sun), specific_date, start_time, end_time, recurring, skill_level, notes, contact_link, featured, cost_type, cost_cents, cost_label
 - **submissions** — name, email, venue_name, address, city, type, website, schedule, contact_link, status (pending/approved/rejected)
 - **newsletter_subscribers** — email
-- **rsvps** — planned (not yet built)
+- **rsvps** — session_id (FK game_sessions, cascade), token (anon device token), created_at; unique(session_id, token). Defined in `supabase/schema-v8.sql` — run pending.
 </CONTEXT>
 
 <CONTEXT name="structure">
@@ -56,6 +56,10 @@ app/
   contact/page.tsx         — contact + newsletter signup
   privacy/page.tsx         — PIPEDA privacy policy
   terms/page.tsx           — terms of use
+  api/rsvp/route.ts        — RSVP toggle (GET count + going, POST toggle)
+  sitemap.ts               — dynamic sitemap (static routes + approved venues)
+  robots.ts                — robots.txt (blocks /admin)
+  opengraph-image.tsx      — branded OG share image (edge runtime)
 
 components/
   HomeClient.tsx           — client shell (type + day filter state, mobile drawer)
@@ -66,9 +70,11 @@ components/
   GameCard.tsx             — session card with CostChip, Lucide icons, focus rings
   Filters.tsx              — type pills + day pills + skill pills
   CostChip.tsx             — Free/Drop-in/Register colored pill
+  RsvpButton.tsx           — anon localStorage RSVP toggle (token resets daily)
 
 lib/
   supabase.ts              — Supabase client
+  utils.ts                 — cn, isNewVenue, getVenueColor, getVenueLabel
   sessions.ts              — getTodaysSessions, isLiveNow, isStartingSoon (Toronto TZ)
   mock-data.ts             — fallback data when Supabase not configured
 
@@ -81,7 +87,7 @@ types/index.ts             — Venue, GameSession, Filters, CostType interfaces
 
 "Court Lights" dark theme — warm charcoal bg, amber/gold primary, Mikasa volleyball colors.
 - Beach pins: amber `oklch(0.82 0.17 75)`
-- Indoor pins: cobalt `oklch(0.52 0.23 263)`
+- Indoor accent: blue `oklch(0.70 0.14 218)` (centralized in `getVenueColor()`; map pins themselves use `TYPE_COLORS` hex `#1D4ED8`)
 - Grass pins: green `oklch(0.55 0.18 145)`
 - Live badge: animated pulse ring via `@keyframes ping`
 - WCAG AA: muted-foreground at `oklch(0.65 0.020 70)`, focus-visible rings on all interactive elements
@@ -100,17 +106,27 @@ types/index.ts             — Venue, GameSession, Filters, CostType interfaces
 - [x] Admin panel (force-dynamic)
 - [x] Contact email: nimobenne@gmail.com everywhere
 - [x] Deployed to Vercel — https://volleymaps.vercel.app/
-- [ ] **PENDING:** Run `supabase/schema-v7.sql` in Supabase SQL Editor
+- [x] `supabase/schema-v7.sql` applied — cost_type/cost_cents/cost_label live in game_sessions
+- [x] Foundation cleanup — getVenueColor/getVenueLabel util, filter types in types/index.ts, dead files removed
+- [x] Mobile UX — --vh drawer height, safe-area VenuePopover, mobile bottom nav (Map / Add game / Contact)
+- [x] Search matches session title + notes (not just venue name/address)
+- [x] next/image on VenuePopover + venue hero (Supabase remote host in next.config.ts)
+- [x] RSVP counter built — RsvpButton + /api/rsvp, anon daily token (needs schema-v8 run to persist)
+- [x] Map markers update opacity in place (no flash); `.live-pulse` ring toggled
+- [x] On-demand ISR — revalidatePath on admin approve / reject / add
+- [x] SEO — sitemap.xml, robots.txt, OG share image
+- [ ] **Run `supabase/schema-v8.sql` in Supabase SQL Editor** — activates RSVP persistence
+- [ ] Visual-test mobile drawer/nav/popover on real devices (iPhone SE + notched)
 - [ ] Cherry Beach organized mixed 6s — add when organizer info available
 </STATUS>
 
 <CONTEXT name="next-up">
 ## Next up
 
-- RSVP counter (anonymous localStorage token, toggle "Going" on GameCard, `rsvps` table)
 - Organizer portal (Supabase Auth)
 - Featured listings + Stripe (monetization)
 - Expand beyond Toronto
+- LiveFeed virtualization (only worth it at 200+ sessions)
 </CONTEXT>
 
 <RULE name="keep-updated">
