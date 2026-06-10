@@ -6,6 +6,7 @@ import { MapPin, ExternalLink, ArrowLeft, Waves, Trees, Building2, Navigation } 
 import { Separator } from '@/components/ui/separator'
 import { DAY_NAMES_FULL } from '@/lib/sessions'
 import Link from 'next/link'
+import Image from 'next/image'
 import { MOCK_VENUES, MOCK_SESSIONS } from '@/lib/mock-data'
 import { getVenueColor, getVenueLabel } from '@/lib/utils'
 import type { Metadata } from 'next'
@@ -108,9 +109,16 @@ export default async function VenuePage({ params }: PageProps) {
       </Link>
 
       {/* Hero: photo if available, gradient fallback otherwise */}
-      <div className="h-52 w-full rounded-xl overflow-hidden mb-6 border border-border">
+      <div className="relative h-52 w-full rounded-xl overflow-hidden mb-6 border border-border">
         {venue.photo_url ? (
-          <img src={venue.photo_url} alt={venue.name} className="w-full h-full object-cover" />
+          <Image
+            src={venue.photo_url}
+            alt={venue.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 672px) 100vw, 672px"
+            priority
+          />
         ) : (
           <div
             className="w-full h-full flex items-end p-4"

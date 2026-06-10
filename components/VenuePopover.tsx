@@ -7,6 +7,7 @@ import { isNewVenue, getVenueColor, getVenueLabel } from '@/lib/utils'
 import GameCard from './GameCard'
 import WeatherChip from './WeatherChip'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface VenuePopoverProps {
   venue: Venue
@@ -34,8 +35,14 @@ export default function VenuePopover({ venue, sessions, onClose }: VenuePopoverP
       />
 
       {venue.photo_url && (
-        <div className="h-28 w-full overflow-hidden">
-          <img src={venue.photo_url} alt={venue.name} className="w-full h-full object-cover" />
+        <div className="relative h-28 w-full overflow-hidden">
+          <Image
+            src={venue.photo_url}
+            alt={venue.name}
+            fill
+            className="object-cover"
+            sizes="320px"
+          />
         </div>
       )}
 
