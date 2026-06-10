@@ -29,8 +29,11 @@ export function createPinElement({ color, isLive, isMobile }: PinOptions): HTMLE
     'justify-content:center',
   ].join(';')
 
-  if (isLive) {
+  // Live pulse ring — always created so it can be toggled in place via
+  // the .live-pulse class; hidden with display:none when not live.
+  {
     const ring = document.createElement('div')
+    ring.className = 'live-pulse'
     // Ring is centered on the pin head (top ~36% of pinH), not the tip
     const headCY = Math.round(pinH * 0.34)
     const ringSize = Math.round(pinW * 1.5)
@@ -45,6 +48,7 @@ export function createPinElement({ color, isLive, isMobile }: PinOptions): HTMLE
       'pointer-events:none',
       `top:${headCY - ringSize / 2}px`,
       `left:${-ringOffset}px`,
+      `display:${isLive ? 'block' : 'none'}`,
     ].join(';')
     wrapper.appendChild(ring)
   }
