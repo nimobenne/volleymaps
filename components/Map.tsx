@@ -24,7 +24,7 @@ interface MapProps {
 export default function Map({ venues, sessions, typeFilter, skillFilter = 'all', dayFilter = 'all', searchQuery = '', onPinTap, onGeolocate }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  const markersRef = useRef<{ marker: maplibregl.Marker; venueId: string }[]>([])
+  const markersRef = useRef<{ marker: maplibregl.Marker; venueId: string; el: HTMLElement }[]>([])
   const onPinTapRef = useRef(onPinTap)
   const onGeolocateRef = useRef(onGeolocate)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
@@ -59,6 +59,7 @@ export default function Map({ venues, sessions, typeFilter, skillFilter = 'all',
     return () => {
       mapRef.current?.remove()
       mapRef.current = null
+      markersRef.current = []
     }
   }, [])
 
@@ -66,38 +67,19 @@ export default function Map({ venues, sessions, typeFilter, skillFilter = 'all',
     const map = mapRef.current
     if (!map) return
 
-    const addMarkers = () => {
-      markersRef.current.forEach(({ marker }) => marker.remove())
-      markersRef.current = []
-
+    const updateMarkers = () => {
       const q = searchQuery.toLowerCase()
-      venues
-        .filter(v => typeFilter === 'all' || v.type === typeFilter)
-        .forEach(venue => {
-          const venueSessions = sessions.filter(s => s.venue_id === venue.id)
 
-          // Check which sessions survive the day + skill filters
-          const visibleSessions = venueSessions.filter(s => {
-            if (dayFilter === 'today' && !isToday(s)) return false
-            if (dayFilter === 'weekend' && s.day_of_week !== 0 && s.day_of_week !== 6) return false
-            if (skillFilter !== 'all' && s.skill_level !== 'all' && s.skill_level !== skillFilter) return false
-            return true
-          })
-
-          const hasLive = venueSessions.some(s => isLiveNow(s))
+      // Create the markers once, then only update them on filter changes
+      if (markersRef.current.length === 0) {
+        venues.forEach(venue => {
           const color = TYPE_COLORS[venue.type] ?? TYPE_COLORS.indoor
           const el = createPinElement({
             color,
-            isLive: hasLive,
+            isLive: false,
             isMobile: window.innerWidth < 768,
           })
           el.title = venue.name
-          const searchMatch = !q
-            || venue.name.toLowerCase().includes(q)
-            || venue.address.toLowerCase().includes(q)
-            || venueSessions.some(s => s.title.toLowerCase().includes(q) || (s.notes ?? '').toLowerCase().includes(q))
-          const filterMatch = visibleSessions.length > 0
-          el.style.opacity = searchMatch && filterMatch ? '1' : '0.15'
           el.addEventListener('click', (e) => {
             e.stopPropagation()
             setSelectedVenue(venue)
@@ -106,12 +88,41 @@ export default function Map({ venues, sessions, typeFilter, skillFilter = 'all',
           const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
             .setLngLat([venue.lng, venue.lat])
             .addTo(map)
-          markersRef.current.push({ marker, venueId: venue.id })
+          markersRef.current.push({ marker, venueId: venue.id, el })
         })
+      }
+
+      // Update opacity + live pulse in place — no destroy/recreate, no flash
+      markersRef.current.forEach(({ venueId, el }) => {
+        const venue = venues.find(v => v.id === venueId)
+        if (!venue) return
+
+        const venueSessions = sessions.filter(s => s.venue_id === venueId)
+        const visibleSessions = venueSessions.filter(s => {
+          if (typeFilter !== 'all' && venue.type !== typeFilter) return false
+          if (dayFilter === 'today' && !isToday(s)) return false
+          if (dayFilter === 'weekend' && s.day_of_week !== 0 && s.day_of_week !== 6) return false
+          if (skillFilter !== 'all' && s.skill_level !== 'all' && s.skill_level !== skillFilter) return false
+          return true
+        })
+
+        const searchMatch = !q
+          || venue.name.toLowerCase().includes(q)
+          || venue.address.toLowerCase().includes(q)
+          || venueSessions.some(s => s.title.toLowerCase().includes(q) || (s.notes ?? '').toLowerCase().includes(q))
+        const filterMatch = typeFilter === 'all'
+          ? visibleSessions.length > 0
+          : venue.type === typeFilter && visibleSessions.length > 0
+        el.style.opacity = searchMatch && filterMatch ? '1' : '0.15'
+
+        const hasLive = venueSessions.some(s => isLiveNow(s))
+        const pulseEl = el.querySelector('.live-pulse') as HTMLElement | null
+        if (pulseEl) pulseEl.style.display = hasLive ? 'block' : 'none'
+      })
     }
 
-    if (map.loaded()) addMarkers()
-    else map.once('load', addMarkers)
+    if (map.loaded()) updateMarkers()
+    else map.once('load', updateMarkers)
   }, [venues, sessions, typeFilter, skillFilter, dayFilter, searchQuery])
 
   return (
