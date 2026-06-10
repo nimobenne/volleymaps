@@ -56,3 +56,7 @@ export interface Filters {
   skillLevel: 'all' | SkillLevel
   day: 'all' | number
 }
+
+export type TypeFilter = 'all' | VenueType
+export type DayFilter = 'all' | 'today' | 'weekend'
+export type SkillFilter = 'all' | SkillLevel

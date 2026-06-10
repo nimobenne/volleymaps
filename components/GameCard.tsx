@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { GameSession, Venue } from '@/types'
 import { formatTime, isLiveNow, isStartingSoon } from '@/lib/sessions'
+import { getVenueColor } from '@/lib/utils'
 import { buildCalendarUrls } from '@/lib/calendar'
 import { ExternalLink, CalendarPlus } from 'lucide-react'
 import Link from 'next/link'
@@ -29,11 +30,7 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
   const [calOpen, setCalOpen] = useState(false)
   const calRef = useRef<HTMLDivElement>(null)
 
-  const venueColor = venue.type === 'beach'
-    ? 'oklch(0.82 0.17 75)'
-    : venue.type === 'grass'
-    ? 'oklch(0.55 0.18 145)'
-    : 'oklch(0.52 0.23 263)'
+  const venueColor = getVenueColor(venue.type)
 
   const isOneTime = !session.recurring && !!session.specific_date
   const { googleUrl, icsUri } = buildCalendarUrls(session, venue)
