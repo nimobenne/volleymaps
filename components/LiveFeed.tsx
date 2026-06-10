@@ -48,7 +48,11 @@ export default function LiveFeed({
     if (typeFilter !== 'all' && venue.type !== typeFilter) return false
     if (skillFilter !== 'all' && s.skill_level !== 'all' && s.skill_level !== skillFilter) return false
     if (dayFilter === 'weekend' && !isWeekendDay(s.day_of_week)) return false
-    if (q && !venue.name.toLowerCase().includes(q) && !venue.address.toLowerCase().includes(q)) return false
+    if (q) {
+      const inVenue = venue.name.toLowerCase().includes(q) || venue.address.toLowerCase().includes(q)
+      const inSession = s.title.toLowerCase().includes(q) || (s.notes ?? '').toLowerCase().includes(q)
+      if (!inVenue && !inSession) return false
+    }
     return true
   })
 
