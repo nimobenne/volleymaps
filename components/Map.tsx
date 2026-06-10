@@ -92,7 +92,10 @@ export default function Map({ venues, sessions, typeFilter, skillFilter = 'all',
             isMobile: window.innerWidth < 768,
           })
           el.title = venue.name
-          const searchMatch = !q || venue.name.toLowerCase().includes(q) || venue.address.toLowerCase().includes(q)
+          const searchMatch = !q
+            || venue.name.toLowerCase().includes(q)
+            || venue.address.toLowerCase().includes(q)
+            || venueSessions.some(s => s.title.toLowerCase().includes(q) || (s.notes ?? '').toLowerCase().includes(q))
           const filterMatch = visibleSessions.length > 0
           el.style.opacity = searchMatch && filterMatch ? '1' : '0.15'
           el.addEventListener('click', (e) => {
