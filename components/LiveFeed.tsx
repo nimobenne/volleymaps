@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Venue, GameSession } from '@/types'
+import { Venue, GameSession, TypeFilter, SkillFilter, DayFilter } from '@/types'
 import { getAllSessionsSorted, isLiveNow, isStartingSoon } from '@/lib/sessions'
 import GameCard from './GameCard'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -9,14 +9,12 @@ import { MapPin } from 'lucide-react'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-type SkillFilter = 'all' | 'beginner' | 'intermediate' | 'competitive'
-
 interface LiveFeedProps {
   venues: Venue[]
   sessions: GameSession[]
-  typeFilter: 'all' | 'beach' | 'indoor' | 'grass'
+  typeFilter: TypeFilter
   skillFilter?: SkillFilter
-  dayFilter?: 'all' | 'today' | 'weekend'
+  dayFilter?: DayFilter
   searchQuery?: string
   userCoords?: { lat: number; lng: number } | null
   onClearFilters?: () => void

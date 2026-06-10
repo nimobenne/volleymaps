@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator'
 import { DAY_NAMES_FULL } from '@/lib/sessions'
 import Link from 'next/link'
 import { MOCK_VENUES, MOCK_SESSIONS } from '@/lib/mock-data'
+import { getVenueColor, getVenueLabel } from '@/lib/utils'
 import type { Metadata } from 'next'
 
 export const revalidate = 3600
@@ -70,13 +71,9 @@ export default async function VenuePage({ params }: PageProps) {
     sessions: recurring.filter(s => s.day_of_week === i),
   })).filter(d => d.sessions.length > 0)
 
-  const venueColor = venue.type === 'beach'
-    ? 'oklch(0.82 0.17 75)'
-    : venue.type === 'grass'
-    ? 'oklch(0.55 0.18 145)'
-    : 'oklch(0.70 0.14 218)'
+  const venueColor = getVenueColor(venue.type)
   const TypeIcon = venue.type === 'beach' ? Waves : venue.type === 'grass' ? Trees : Building2
-  const typeLabel = venue.type === 'beach' ? 'Beach' : venue.type === 'grass' ? 'Grass' : 'Indoor'
+  const typeLabel = getVenueLabel(venue.type)
 
   const jsonLd = {
     '@context': 'https://schema.org',

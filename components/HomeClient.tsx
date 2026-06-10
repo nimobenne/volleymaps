@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
-import { Venue, GameSession } from '@/types'
+import { Venue, GameSession, TypeFilter, SkillFilter, DayFilter } from '@/types'
 import { getTodaysSessions } from '@/lib/sessions'
 import Filters from './Filters'
 import LiveFeed from './LiveFeed'
@@ -10,10 +10,6 @@ import SearchBar from './SearchBar'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 
 const Map = dynamic(() => import('./Map'), { ssr: false })
-
-type TypeFilter = 'all' | 'beach' | 'indoor' | 'grass'
-type SkillFilter = 'all' | 'beginner' | 'intermediate' | 'competitive'
-type DayFilter = 'all' | 'today' | 'weekend'
 
 interface HomeClientProps {
   venues: Venue[]

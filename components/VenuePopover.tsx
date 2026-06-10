@@ -3,7 +3,7 @@
 import { Venue, GameSession } from '@/types'
 import { X, MapPin, ExternalLink, ArrowRight, Navigation } from 'lucide-react'
 import { getTodaysSessions } from '@/lib/sessions'
-import { isNewVenue } from '@/lib/utils'
+import { isNewVenue, getVenueColor, getVenueLabel } from '@/lib/utils'
 import GameCard from './GameCard'
 import WeatherChip from './WeatherChip'
 import Link from 'next/link'
@@ -16,12 +16,8 @@ interface VenuePopoverProps {
 
 export default function VenuePopover({ venue, sessions, onClose }: VenuePopoverProps) {
   const todaysSessions = getTodaysSessions(sessions)
-  const venueColor = venue.type === 'beach'
-    ? 'oklch(0.82 0.17 75)'
-    : venue.type === 'grass'
-    ? 'oklch(0.55 0.18 145)'
-    : 'oklch(0.70 0.14 218)'
-  const typeLabel = venue.type === 'beach' ? 'Beach' : venue.type === 'grass' ? 'Grass' : 'Indoor'
+  const venueColor = getVenueColor(venue.type)
+  const typeLabel = getVenueLabel(venue.type)
 
   return (
     <div className="
