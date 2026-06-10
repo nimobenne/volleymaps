@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase-admin'
 
 function toSlug(name: string) {
@@ -36,6 +37,7 @@ export async function rejectSubmission(id: string) {
     .update({ status: 'rejected' })
     .eq('id', id)
   if (error) return { error: error.message }
+  revalidatePath('/')
   return { ok: true }
 }
 
@@ -67,6 +69,9 @@ export async function approveSubmission(formData: FormData) {
     .eq('id', submissionId)
   if (subError) return { error: subError.message }
 
+  // New venue is live immediately — bust the homepage + venue page caches
+  revalidatePath('/')
+  revalidatePath('/venues/[slug]', 'page')
   return { ok: true }
 }
 
@@ -109,5 +114,7 @@ export async function addVenue(formData: FormData) {
     if (sessionError) return { error: sessionError.message }
   }
 
+  revalidatePath('/')
+  revalidatePath('/venues/[slug]', 'page')
   return { ok: true }
 }
