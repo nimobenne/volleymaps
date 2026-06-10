@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { Venue, GameSession, TypeFilter, SkillFilter, DayFilter } from '@/types'
 import { getTodaysSessions } from '@/lib/sessions'
@@ -24,6 +24,16 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
   const touchStartY = useRef<number | null>(null)
+
+  // Fix iOS Safari 100vh bug: track the real viewport height in a CSS var
+  useEffect(() => {
+    function setVh() {
+      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`)
+    }
+    setVh()
+    window.addEventListener('resize', setVh)
+    return () => window.removeEventListener('resize', setVh)
+  }, [])
 
   const venueMap = Object.fromEntries(venues.map(v => [v.id, v]))
 
@@ -91,9 +101,10 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
       </aside>
 
       <div
-        className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-card border-t border-border rounded-t-2xl overflow-hidden"
+        className="md:hidden fixed inset-x-0 z-30 bg-card border-t border-border rounded-t-2xl overflow-hidden"
         style={{
-          height: '72vh',
+          height: 'calc(var(--vh, 1vh) * 72)',
+          bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
           transform: drawerOpen ? 'translateY(0)' : 'translateY(calc(100% - 88px))',
           transition: 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1)',
           willChange: 'transform',
@@ -127,7 +138,7 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
           </div>
         </button>
 
-        <div className="overflow-y-auto overscroll-contain" style={{ height: 'calc(72vh - 88px)' }}>
+        <div className="overflow-y-auto overscroll-contain" style={{ height: 'calc(var(--vh, 1vh) * 72 - 88px)' }}>
           <LiveFeed
             venues={venues}
             sessions={sessions}

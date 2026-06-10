@@ -58,6 +58,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
 
+        {/* Mobile bottom nav — footer links are hidden on mobile */}
+        <nav
+          className="md:hidden fixed bottom-0 inset-x-0 z-20 flex items-center justify-around border-t border-border bg-card text-xs text-muted-foreground px-4 pt-2"
+          style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <Link href="/" className="flex flex-col items-center gap-0.5 hover:text-foreground transition-colors">
+            <span className="text-base leading-none">🗺️</span>
+            <span>Map</span>
+          </Link>
+          <Link href="/add-your-game" className="flex flex-col items-center gap-0.5 hover:text-foreground transition-colors">
+            <span className="text-base leading-none">➕</span>
+            <span>Add game</span>
+          </Link>
+          <Link href="/contact" className="flex flex-col items-center gap-0.5 hover:text-foreground transition-colors">
+            <span className="text-base leading-none">✉️</span>
+            <span>Contact</span>
+          </Link>
+        </nav>
+
         <footer className="shrink-0 hidden md:flex items-center justify-center gap-4 px-4 py-2 border-t border-border bg-card text-xs text-muted-foreground">
           <span>Toronto volleyball, all in one place.</span>
           <span className="text-border">·</span>
