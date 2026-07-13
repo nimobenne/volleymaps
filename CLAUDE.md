@@ -27,7 +27,7 @@ Falls back to mock data (`lib/mock-data.ts`) when env vars are not set.
 <CONTEXT name="supabase">
 ## Supabase setup
 
-Run migrations in order in Supabase SQL Editor. Latest: `supabase/schema-v8.sql` (adds the `rsvps` table) — **PENDING manual run; RSVP persistence is inactive until applied.** `schema-v7.sql` (cost_type/cost_cents/cost_label) already applied.
+Run migrations in order in Supabase SQL Editor. `schema-v8.sql` (rsvps) applied 2026-07-13 — RSVP persistence verified live. Latest: `supabase/schema-v9.sql` (drops the wide-open rsvps RLS policies; API uses service role) — **PENDING manual run.**
 
 Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
 </CONTEXT>
@@ -52,7 +52,7 @@ app/
   venues/[slug]/page.tsx   — venue detail + full schedule
   add-your-game/page.tsx   — submission form
   admin/page.tsx           — approve/reject submissions (force-dynamic)
-  admin/login/page.tsx     — cookie-based auth
+  admin/login/page.tsx     — login form (HMAC-signed session via lib/admin-session.ts)
   contact/page.tsx         — contact + newsletter signup
   privacy/page.tsx         — PIPEDA privacy policy
   terms/page.tsx           — terms of use
@@ -70,10 +70,13 @@ components/
   GameCard.tsx             — session card with CostChip, Lucide icons, focus rings
   Filters.tsx              — type pills + day pills + skill pills
   CostChip.tsx             — Free/Drop-in/Register colored pill
-  RsvpButton.tsx           — anon localStorage RSVP toggle (token resets daily)
+  RsvpButton.tsx           — anon localStorage RSVP toggle (token resets daily; shared fetch cache + sync event because LiveFeed mounts twice)
+  MobileNav.tsx            — Lucide bottom nav with aria-current active state
+  Logo.tsx                 — SVG volleyball mark (amber)
 
 lib/
   supabase.ts              — Supabase client
+  admin-session.ts         — HMAC session cookie create/verify + timing-safe compare (secret: ADMIN_SESSION_SECRET or derived from ADMIN_PASSWORD)
   utils.ts                 — cn, isNewVenue, getVenueColor, getVenueLabel
   sessions.ts              — getTodaysSessions, isLiveNow, isStartingSoon (Toronto TZ)
   mock-data.ts             — fallback data when Supabase not configured
@@ -114,8 +117,19 @@ types/index.ts             — Venue, GameSession, Filters, CostType interfaces
 - [x] RSVP counter built — RsvpButton + /api/rsvp, anon daily token (needs schema-v8 run to persist)
 - [x] Map markers update opacity in place (no flash); `.live-pulse` ring toggled
 - [x] On-demand ISR — revalidatePath on admin approve / reject / add
+- [x] Admin: History tab shows approved/rejected submissions (previously only pending was queried, decided ones vanished)
+- [x] Admin: Venues tab rows are click-to-expand editable (updateVenue action) — was add-only + read-only list before
 - [x] SEO — sitemap.xml, robots.txt, OG share image
-- [ ] **Run `supabase/schema-v8.sql` in Supabase SQL Editor** — activates RSVP persistence
+- [x] schema-v8 applied — RSVP persistence verified live in prod (toggle on/off tested 2026-07-13)
+- [x] **Security pass (2026-07-13)** — /admin page + all admin server actions were fully unauthenticated in prod; now gated by HMAC-signed cookie. Embed API stored-XSS escaped. Newsletter API no longer leaks DB errors / logs emails. RSVP route: UUID validation, atomic toggle, honest error responses.
+- [x] A11y pass — aria-pressed on all toggles, calendar menu aria-expanded + Escape, ≥28px touch targets, homepage h1, skeleton role=status, feed date pinned to America/Toronto
+- [x] Design pass — SVG volleyball logo + two-tone wordmark, Lucide mobile nav w/ active state, floodlight wash on map, court-line accent on feed header; live/soon chips use theme tokens
+- [x] Dead deps removed (pocketbase + 5 legacy scripts); .env.local.example fixed (was PocketBase-only)
+- [x] Audit report: `mdfiles/audit-2026-07.md` (15/20; open P2/P3 items listed there)
+- [ ] **Run `supabase/schema-v9.sql` in Supabase SQL Editor** — locks down rsvps RLS (currently anon key can delete all RSVP rows)
+- [ ] Optional: set `ADMIN_SESSION_SECRET` in Vercel (falls back to key derived from ADMIN_PASSWORD)
+- [ ] Verify in Supabase dashboard: `newsletter_subscribers` has RLS on with no anon policies
+- [ ] Local `.env.local` has empty Supabase values — pull real ones (`vercel env pull`) to dev against live data
 - [ ] Visual-test mobile drawer/nav/popover on real devices (iPhone SE + notched)
 - [ ] Cherry Beach organized mixed 6s — add when organizer info available
 </STATUS>
