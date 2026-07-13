@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { Venue, GameSession, TypeFilter, SkillFilter, DayFilter } from '@/types'
 import { getAllSessionsSorted, isLiveNow, isStartingSoon } from '@/lib/sessions'
 import GameCard from './GameCard'
@@ -32,12 +32,17 @@ function isWeekendDay(dayOfWeek?: number): boolean {
   return dayOfWeek === 0 || dayOfWeek === 6
 }
 
+// "Today" depends on client time — render skeletons until hydrated to avoid mismatch
+const emptySubscribe = () => () => {}
+function useMounted() {
+  return useSyncExternalStore(emptySubscribe, () => true, () => false)
+}
+
 export default function LiveFeed({
   venues, sessions, typeFilter, skillFilter = 'all', dayFilter = 'all', searchQuery = '', userCoords, onClearFilters,
 }: LiveFeedProps) {
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
   const [sortByDistance, setSortByDistance] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
 
   const venueMap = Object.fromEntries(venues.map(v => [v.id, v]))
 
@@ -76,7 +81,7 @@ export default function LiveFeed({
   const soonCount = today.filter(s => !isLiveNow(s) && isStartingSoon(s)).length
 
   const dateLabel = new Date().toLocaleDateString('en-CA', {
-    weekday: 'long', month: 'long', day: 'numeric',
+    weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Toronto',
   })
 
   // Group upcoming by day (or skip grouping in distance mode)
@@ -92,7 +97,7 @@ export default function LiveFeed({
 
   if (!mounted) {
     return (
-      <div className="flex flex-col gap-3 px-4 pt-5">
+      <div className="flex flex-col gap-3 px-4 pt-5" role="status" aria-label="Loading games">
         {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded" />)}
       </div>
     )
@@ -101,27 +106,27 @@ export default function LiveFeed({
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 pt-5 pb-3 border-b border-border">
+        <div aria-hidden className="h-1 w-8 rounded-full bg-primary mb-2" />
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h2 className="font-display font-bold text-lg uppercase tracking-wide">Today</h2>
           <div className="flex items-center gap-2">
             {liveCount > 0 && (
-              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 border"
-                style={{ color: 'oklch(0.68 0.21 145)', borderColor: 'oklch(0.68 0.21 145 / 40%)', backgroundColor: 'oklch(0.68 0.21 145 / 12%)' }}>
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'oklch(0.68 0.21 145)' }} />
+              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 border text-live border-live/40 bg-live/12">
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-live" />
                 {liveCount} live
               </span>
             )}
             {soonCount > 0 && (
-              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 border"
-                style={{ color: 'oklch(0.70 0.16 90)', borderColor: 'oklch(0.87 0.19 105 / 50%)', backgroundColor: 'oklch(0.87 0.19 105 / 15%)' }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'oklch(0.87 0.19 105)' }} />
+              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 border text-soon border-soon/50 bg-soon/15">
+                <span className="w-1.5 h-1.5 rounded-full bg-soon" />
                 {soonCount} soon
               </span>
             )}
             {userCoords && (
               <button
                 onClick={() => setSortByDistance(d => !d)}
-                className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 border transition-all ${
+                aria-pressed={sortByDistance}
+                className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 min-h-[28px] border transition-all ${
                   sortByDistance
                     ? 'bg-primary/15 text-primary border-primary/40'
                     : 'border-border text-muted-foreground hover:text-foreground'

@@ -63,6 +63,12 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
   return (
     <div className="relative flex h-full overflow-hidden" style={{ height: '100%' }}>
       <div className="relative flex-1">
+        {/* Court Lights: warm floodlight falloff from the top of the map */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-48 z-[5]"
+          style={{ background: 'radial-gradient(ellipse 130% 100% at 50% -30%, oklch(0.82 0.17 75 / 9%), transparent 65%)' }}
+        />
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-auto flex flex-col items-center gap-2 w-[calc(100vw-1rem)] sm:w-auto">
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
           <Filters

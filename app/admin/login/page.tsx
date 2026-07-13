@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { loginAction } from '../actions'
+import Logo from '@/components/Logo'
 
 export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null)
@@ -21,8 +22,8 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-8">
-          <span className="text-2xl">🏐</span>
-          <span className="font-display font-bold text-xl tracking-wide uppercase">VolleyMaps Admin</span>
+          <Logo className="h-6 w-6 text-primary" />
+          <span className="font-display font-bold text-xl tracking-wide uppercase">Volley<span className="text-primary">Maps</span> Admin</span>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

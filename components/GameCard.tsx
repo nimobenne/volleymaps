@@ -44,8 +44,15 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
     function handleClick(e: MouseEvent) {
       if (calRef.current && !calRef.current.contains(e.target as Node)) setCalOpen(false)
     }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setCalOpen(false)
+    }
     document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
   }, [calOpen])
 
   return (
@@ -66,16 +73,14 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
           <p className="text-sm font-semibold leading-snug">{session.title}</p>
           <div className="shrink-0 flex items-center gap-1.5">
             {live && (
-              <span className="flex items-center gap-1 text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-full border"
-                style={{ color: 'oklch(0.68 0.21 145)', borderColor: 'oklch(0.68 0.21 145 / 40%)', backgroundColor: 'oklch(0.68 0.21 145 / 12%)' }}>
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'oklch(0.68 0.21 145)' }} />
+              <span className="flex items-center gap-1 text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-full border text-live border-live/40 bg-live/12">
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-live" />
                 Live
               </span>
             )}
             {soon && (
-              <span className="flex items-center gap-1 text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-full border"
-                style={{ color: 'oklch(0.70 0.16 90)', borderColor: 'oklch(0.87 0.19 105 / 50%)', backgroundColor: 'oklch(0.87 0.19 105 / 15%)' }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'oklch(0.87 0.19 105)' }} />
+              <span className="flex items-center gap-1 text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-full border text-soon border-soon/50 bg-soon/15">
+                <span className="w-1.5 h-1.5 rounded-full bg-soon" />
                 Soon
               </span>
             )}
@@ -130,8 +135,10 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
             <div className="relative" ref={calRef}>
               <button
                 onClick={() => setCalOpen(o => !o)}
-                className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="p-1.5 min-h-[28px] min-w-[28px] inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 aria-label="Add to calendar"
+                aria-expanded={calOpen}
+                aria-haspopup="true"
               >
                 <CalendarPlus className="h-3.5 w-3.5" />
               </button>

@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Barlow_Condensed, DM_Sans } from 'next/font/google'
 import './globals.css'
 import Link from 'next/link'
+import Logo from '@/components/Logo'
+import MobileNav from '@/components/MobileNav'
 
 const barlowCondensed = Barlow_Condensed({
   variable: '--font-barlow-condensed',
@@ -40,9 +42,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="h-full flex flex-col antialiased bg-background text-foreground">
         <header className="shrink-0 flex items-center justify-between px-4 md:px-6 h-13 border-b border-border bg-card z-30">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-xl leading-none">🏐</span>
-            <span className="font-display font-bold text-xl tracking-wide uppercase text-foreground group-hover:text-primary transition-colors">
-              VolleyMaps
+            <Logo className="h-6 w-6 text-primary transition-transform group-hover:rotate-12" />
+            <span className="font-display font-bold text-xl tracking-wide uppercase text-foreground">
+              Volley<span className="text-primary">Maps</span>
             </span>
           </Link>
 
@@ -59,23 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
 
         {/* Mobile bottom nav — footer links are hidden on mobile */}
-        <nav
-          className="md:hidden fixed bottom-0 inset-x-0 z-20 flex items-center justify-around border-t border-border bg-card text-xs text-muted-foreground px-4 pt-2"
-          style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
-        >
-          <Link href="/" className="flex flex-col items-center gap-0.5 hover:text-foreground transition-colors">
-            <span className="text-base leading-none">🗺️</span>
-            <span>Map</span>
-          </Link>
-          <Link href="/add-your-game" className="flex flex-col items-center gap-0.5 hover:text-foreground transition-colors">
-            <span className="text-base leading-none">➕</span>
-            <span>Add game</span>
-          </Link>
-          <Link href="/contact" className="flex flex-col items-center gap-0.5 hover:text-foreground transition-colors">
-            <span className="text-base leading-none">✉️</span>
-            <span>Contact</span>
-          </Link>
-        </nav>
+        <MobileNav />
 
         <footer className="shrink-0 hidden md:flex items-center justify-center gap-4 px-4 py-2 border-t border-border bg-card text-xs text-muted-foreground">
           <span>Toronto volleyball, all in one place.</span>

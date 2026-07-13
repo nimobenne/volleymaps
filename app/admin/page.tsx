@@ -1,10 +1,14 @@
+import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { isAdminAuthenticated } from '@/lib/admin-session'
 import { Submission, Venue } from '@/types'
 import AdminClient from './AdminClient'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminPage() {
+  if (!(await isAdminAuthenticated())) redirect('/admin/login')
+
   const supabase = createAdminClient()
 
   const [{ data: submissions }, { data: venues }] = await Promise.all([

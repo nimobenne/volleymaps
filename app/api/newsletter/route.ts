@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
-  const { email } = await req.json()
+  let email: unknown
+  try {
+    ;({ email } = await req.json())
+  } catch {
+    return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
+  }
+  if (typeof email !== 'string') {
+    return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
+  }
 
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!email || !emailRe.test(email)) {
@@ -20,8 +28,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error('[newsletter] supabase error:', error.message)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Subscription failed' }, { status: 500 })
   }
-  console.log('[newsletter] subscribed:', email)
   return NextResponse.json({ ok: true })
 }
