@@ -52,8 +52,9 @@ function PillRow<T extends string>({ options, active, onSelect, pillSize = 'md' 
         <button
           key={value}
           onClick={() => onSelect(value)}
+          aria-pressed={active === value}
           className={`flex items-center gap-1.5 rounded-full font-semibold transition-all duration-150 whitespace-nowrap ${
-            pillSize === 'md' ? 'px-2.5 py-1.5 md:px-4 text-xs md:text-sm min-h-[36px] min-w-[36px]' : 'px-2.5 py-1 text-[11px]'
+            pillSize === 'md' ? 'px-2.5 py-1.5 md:px-4 text-xs md:text-sm min-h-[36px] min-w-[36px]' : 'px-2.5 py-1 text-[11px] min-h-[28px]'
           } ${active === value ? activeCls : inactiveCls}`}
         >
           {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}

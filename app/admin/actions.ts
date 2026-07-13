@@ -1,9 +1,9 @@
 'use server'
 
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { createAdminSession, destroyAdminSession, isAdminAuthenticated, safeEqual } from '@/lib/admin-session'
 
 function toSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -11,26 +11,21 @@ function toSlug(name: string) {
 
 export async function loginAction(formData: FormData) {
   const password = formData.get('password') as string
-  if (password !== process.env.ADMIN_PASSWORD) {
+  const expected = process.env.ADMIN_PASSWORD
+  if (!expected || !password || !safeEqual(password, expected)) {
     return { error: 'Wrong password' }
   }
-  const cookieStore = await cookies()
-  cookieStore.set('admin_session', 'authenticated', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 30,
-    path: '/',
-  })
+  await createAdminSession()
   redirect('/admin')
 }
 
 export async function logoutAction() {
-  const cookieStore = await cookies()
-  cookieStore.delete('admin_session')
+  await destroyAdminSession()
   redirect('/admin/login')
 }
 
 export async function rejectSubmission(id: string) {
+  if (!(await isAdminAuthenticated())) return { error: 'Unauthorized' }
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('submissions')
@@ -42,6 +37,7 @@ export async function rejectSubmission(id: string) {
 }
 
 export async function approveSubmission(formData: FormData) {
+  if (!(await isAdminAuthenticated())) return { error: 'Unauthorized' }
   const supabase = createAdminClient()
 
   const submissionId = formData.get('submission_id') as string
@@ -76,6 +72,7 @@ export async function approveSubmission(formData: FormData) {
 }
 
 export async function addVenue(formData: FormData) {
+  if (!(await isAdminAuthenticated())) return { error: 'Unauthorized' }
   const supabase = createAdminClient()
 
   const name = formData.get('name') as string

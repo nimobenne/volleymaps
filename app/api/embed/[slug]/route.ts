@@ -9,6 +9,10 @@ function fmt(time: string) {
   return `${h % 12 || 12}:${m.toString().padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`
 }
 
+function esc(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
 const SKILL_LABEL: Record<string, string> = {
   all: 'All levels', beginner: 'Beginner', intermediate: 'Intermediate', competitive: 'Competitive',
 }
@@ -39,8 +43,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
 
   const sessionRow = (s: typeof all[0]) => `
     <div class="session">
-      <div class="session-title">${s.title}</div>
-      <div class="session-meta">${fmt(s.start_time)} – ${fmt(s.end_time)} · ${SKILL_LABEL[s.skill_level] ?? s.skill_level}</div>
+      <div class="session-title">${esc(s.title)}</div>
+      <div class="session-meta">${fmt(s.start_time)} – ${fmt(s.end_time)} · ${esc(SKILL_LABEL[s.skill_level] ?? s.skill_level)}</div>
     </div>`
 
   const html = `<!DOCTYPE html>
@@ -48,7 +52,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${venue.name} Schedule — VolleyMaps</title>
+<title>${esc(venue.name)} Schedule — VolleyMaps</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, -apple-system, sans-serif; background: #1c1917; color: #e7e5e4; font-size: 14px; padding: 16px; }
@@ -70,7 +74,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   <div class="stripe"></div>
   <div>
     <div class="type-tag">${typeLabel}</div>
-    <div class="venue-name">${venue.name}</div>
+    <div class="venue-name">${esc(venue.name)}</div>
   </div>
 </div>
 ${byDay.map(({ day, ss }) => `
@@ -81,7 +85,7 @@ ${oneOffs.length ? `
   <div class="day-label">One-time events</div>
   ${oneOffs.map(sessionRow).join('')}
 ` : ''}
-<div class="footer">Schedule via <a href="https://volleymaps.vercel.app/venues/${slug}" target="_blank">VolleyMaps</a></div>
+<div class="footer">Schedule via <a href="https://volleymaps.vercel.app/venues/${encodeURIComponent(slug)}" target="_blank">VolleyMaps</a></div>
 </body>
 </html>`
 
