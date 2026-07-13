@@ -35,7 +35,7 @@ export default function PrivacyPage() {
             <li>Your email address</li>
             <li>Venue details you provide (location name, address, schedule)</li>
           </ul>
-          <p>We do not collect any personal information from people who simply browse the map. We use no analytics, no tracking pixels, and no advertising cookies.</p>
+          <p>We do not collect any personal information from people who simply browse the map. We use no tracking pixels and no advertising cookies. We use Vercel Web Analytics to see aggregate traffic numbers (like page views and referring sites) — it does not use cookies and does not identify individual visitors.</p>
         </section>
 
         <section className="flex flex-col gap-2">
