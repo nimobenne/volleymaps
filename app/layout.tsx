@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Barlow_Condensed, DM_Sans } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
@@ -72,6 +73,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span className="text-border">·</span>
           <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
         </footer>
+
+        <Analytics />
       </body>
     </html>
   )

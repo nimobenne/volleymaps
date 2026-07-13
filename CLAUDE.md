@@ -9,7 +9,7 @@ Toronto volleyball pickup game finder. Organizers opt in to be listed. Monetizat
 - **Supabase** — Postgres, RLS, hosted on Supabase cloud
 - **MapLibre GL JS** + CartoDB Voyager tiles — free, no API key needed
 - **shadcn/ui** + Tailwind CSS v4
-- **Vercel** — production hosting
+- **Vercel** — production hosting + Web Analytics (cookieless, aggregate-only; see privacy policy)
 </STACK>
 
 <CONTEXT name="env-vars">
@@ -119,6 +119,9 @@ types/index.ts             — Venue, GameSession, Filters, CostType interfaces
 - [x] On-demand ISR — revalidatePath on admin approve / reject / add
 - [x] Admin: History tab shows approved/rejected submissions (previously only pending was queried, decided ones vanished)
 - [x] Admin: Venues tab rows are click-to-expand editable (updateVenue action) — was add-only + read-only list before
+- [x] Admin: each venue row lists its game_sessions inline, fully editable/deletable (updateSession/deleteSession) + add-session form (addSession) — schedule details could previously only be set once at venue creation
+- [x] Footer layout fix — body was height:100% capped so long pages (privacy/terms/contact) overflowed instead of growing; footer stuck mid-page instead of true bottom. Now min-h-dvh on body, homepage keeps fixed-viewport map via explicit dvh calc.
+- [x] Vercel Web Analytics added — site had zero traffic visibility (privacy policy explicitly promised no analytics/tracking); Web Analytics is cookieless/aggregate-only so it doesn't conflict with that promise. Privacy policy wording updated to match. **Needs the Analytics tab enabled in the Vercel dashboard for the project** (package + component alone don't turn it on).
 - [x] SEO — sitemap.xml, robots.txt, OG share image
 - [x] schema-v8 applied — RSVP persistence verified live in prod (toggle on/off tested 2026-07-13)
 - [x] **Security pass (2026-07-13)** — /admin page + all admin server actions were fully unauthenticated in prod; now gated by HMAC-signed cookie. Embed API stored-XSS escaped. Newsletter API no longer leaks DB errors / logs emails. RSVP route: UUID validation, atomic toggle, honest error responses.
