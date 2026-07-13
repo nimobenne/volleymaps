@@ -2,8 +2,11 @@
 
 import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Submission, Venue } from '@/types'
-import { rejectSubmission, approveSubmission, addVenue, updateVenue, logoutAction } from './actions'
+import { Submission, Venue, GameSession } from '@/types'
+import {
+  rejectSubmission, approveSubmission, addVenue, updateVenue,
+  addSession, updateSession, deleteSession, logoutAction,
+} from './actions'
 
 const DAY_OPTIONS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -11,7 +14,7 @@ function toSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 }
 
-export default function AdminClient({ submissions, venues }: { submissions: Submission[]; venues: Venue[] }) {
+export default function AdminClient({ submissions, venues, sessions }: { submissions: Submission[]; venues: Venue[]; sessions: GameSession[] }) {
   const [tab, setTab] = useState<'submissions' | 'history' | 'venues'>('submissions')
   const pending = submissions.filter(s => s.status === 'pending')
   const decided = submissions.filter(s => s.status !== 'pending')
@@ -52,7 +55,7 @@ export default function AdminClient({ submissions, venues }: { submissions: Subm
 
       {tab === 'submissions' && <SubmissionsTab submissions={pending} />}
       {tab === 'history' && <HistoryTab submissions={decided} />}
-      {tab === 'venues' && <VenuesTab venues={venues} />}
+      {tab === 'venues' && <VenuesTab venues={venues} sessions={sessions} />}
     </div>
   )
 }
@@ -233,7 +236,7 @@ function SubmissionCard({ submission: s }: { submission: Submission }) {
   )
 }
 
-function VenuesTab({ venues }: { venues: Venue[] }) {
+function VenuesTab({ venues, sessions }: { venues: Venue[]; sessions: GameSession[] }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -349,7 +352,7 @@ function VenuesTab({ venues }: { venues: Venue[] }) {
           </p>
           <div className="flex flex-col gap-1">
             {venues.map(v => (
-              <VenueRow key={v.id} venue={v} />
+              <VenueRow key={v.id} venue={v} sessions={sessions.filter(s => s.venue_id === v.id)} />
             ))}
           </div>
         </div>
@@ -358,12 +361,13 @@ function VenuesTab({ venues }: { venues: Venue[] }) {
   )
 }
 
-function VenueRow({ venue: v }: { venue: Venue }) {
+function VenueRow({ venue: v, sessions }: { venue: Venue; sessions: GameSession[] }) {
   const [expanded, setExpanded] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [slug, setSlug] = useState(v.slug)
+  const [addingSession, setAddingSession] = useState(false)
   const router = useRouter()
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -394,41 +398,207 @@ function VenueRow({ venue: v }: { venue: Venue }) {
       </button>
 
       {expanded && (
-        <form onSubmit={handleSubmit} className="pb-4 flex flex-col gap-3">
-          <input type="hidden" name="venue_id" value={v.id} />
+        <div className="pb-4 flex flex-col gap-6">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <input type="hidden" name="venue_id" value={v.id} />
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Venue details</p>
 
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label="Name" name="name" defaultValue={v.name} required />
-            <FormField label="Slug" name="slug" value={slug} onChange={e => setSlug(e.target.value)} required />
-            <FormField label="Address" name="address" defaultValue={v.address} required />
-            <FormField label="City" name="city" defaultValue={v.city} required />
-            <FormField label="Lat" name="lat" defaultValue={String(v.lat)} required />
-            <FormField label="Lng" name="lng" defaultValue={String(v.lng)} required />
-            <FormField label="Website" name="website" defaultValue={v.website} />
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">Type</label>
-              <select name="type" defaultValue={v.type}
-                className="rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="beach">Beach</option>
-                <option value="grass">Grass</option>
-                <option value="indoor">Indoor</option>
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Name" name="name" defaultValue={v.name} required />
+              <FormField label="Slug" name="slug" value={slug} onChange={e => setSlug(e.target.value)} required />
+              <FormField label="Address" name="address" defaultValue={v.address} required />
+              <FormField label="City" name="city" defaultValue={v.city} required />
+              <FormField label="Lat" name="lat" defaultValue={String(v.lat)} required />
+              <FormField label="Lng" name="lng" defaultValue={String(v.lng)} required />
+              <FormField label="Website" name="website" defaultValue={v.website} />
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-muted-foreground">Type</label>
+                <select name="type" defaultValue={v.type}
+                  className="rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  <option value="beach">Beach</option>
+                  <option value="grass">Grass</option>
+                  <option value="indoor">Indoor</option>
+                </select>
+              </div>
             </div>
+
+            {error && <p className="text-xs text-destructive">{error}</p>}
+            {saved && <p className="text-xs text-green-500">Saved.</p>}
+
+            <button
+              type="submit"
+              disabled={isPending}
+              className="text-sm font-bold bg-primary text-primary-foreground rounded-lg py-2 hover:opacity-90 transition-opacity disabled:opacity-50 font-display uppercase tracking-wide"
+            >
+              {isPending ? 'Saving…' : 'Save venue'}
+            </button>
+          </form>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Sessions {sessions.length > 0 ? `(${sessions.length})` : ''}
+              </p>
+              <button
+                type="button"
+                onClick={() => setAddingSession(x => !x)}
+                className="text-xs text-primary font-semibold hover:underline"
+              >
+                {addingSession ? '− Cancel' : '+ Add session'}
+              </button>
+            </div>
+
+            {sessions.length === 0 && !addingSession && (
+              <p className="text-xs text-muted-foreground">No sessions for this venue yet.</p>
+            )}
+
+            {sessions.map(s => (
+              <SessionForm key={s.id} session={s} />
+            ))}
+
+            {addingSession && (
+              <SessionForm venueId={v.id} onDone={() => setAddingSession(false)} />
+            )}
           </div>
-
-          {error && <p className="text-xs text-destructive">{error}</p>}
-          {saved && <p className="text-xs text-green-500">Saved.</p>}
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="text-sm font-bold bg-primary text-primary-foreground rounded-lg py-2 hover:opacity-90 transition-opacity disabled:opacity-50 font-display uppercase tracking-wide"
-          >
-            {isPending ? 'Saving…' : 'Save changes'}
-          </button>
-        </form>
+        </div>
       )}
     </div>
+  )
+}
+
+function SessionForm({
+  session, venueId, onDone,
+}: {
+  session?: GameSession
+  venueId?: string
+  onDone?: () => void
+}) {
+  const isNew = !session
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const [deleted, setDeleted] = useState(false)
+  const [recurring, setRecurring] = useState(session?.recurring ?? true)
+  const router = useRouter()
+
+  if (deleted) return null
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(null)
+    setSaved(false)
+    const formData = new FormData(e.currentTarget)
+    startTransition(async () => {
+      const result = isNew ? await addSession(formData) : await updateSession(formData)
+      if (result?.error) { setError(result.error); return }
+      setSaved(true)
+      router.refresh()
+      if (isNew) onDone?.()
+    })
+  }
+
+  function handleDelete() {
+    if (!session) return
+    if (!confirm(`Delete "${session.title}"?`)) return
+    setError(null)
+    startTransition(async () => {
+      const result = await deleteSession(session.id)
+      if (result?.error) { setError(result.error); return }
+      setDeleted(true)
+      router.refresh()
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="border border-border rounded-xl p-3 flex flex-col gap-3">
+      {session && <input type="hidden" name="session_id" value={session.id} />}
+      {venueId && <input type="hidden" name="venue_id" value={venueId} />}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <FormField label="Session title" name="title" defaultValue={session?.title} placeholder="Saturday Open Play" required />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">Skill level</label>
+          <select name="skill_level" defaultValue={session?.skill_level ?? 'all'}
+            className="rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            <option value="all">All levels</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="competitive">Competitive</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">Cost type</label>
+          <select name="cost_type" defaultValue={session?.cost_type ?? 'unknown'}
+            className="rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            <option value="unknown">Unknown</option>
+            <option value="free">Free</option>
+            <option value="paid">Paid / drop-in</option>
+            <option value="registration">Registration</option>
+          </select>
+        </div>
+
+        <FormField label="Start time" name="start_time" type="time" defaultValue={session?.start_time} required />
+        <FormField label="End time" name="end_time" type="time" defaultValue={session?.end_time} required />
+
+        <label className="flex items-center gap-2 text-xs text-muted-foreground col-span-2">
+          <input type="checkbox" name="recurring" defaultChecked={recurring} onChange={e => setRecurring(e.target.checked)} />
+          Recurring weekly
+        </label>
+
+        {recurring ? (
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted-foreground">Day of week</label>
+            <select name="day_of_week" defaultValue={String(session?.day_of_week ?? 6)}
+              className="rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              {DAY_OPTIONS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+            </select>
+          </div>
+        ) : (
+          <FormField label="Specific date" name="specific_date" type="date" defaultValue={session?.specific_date} />
+        )}
+
+        <FormField label="Cost label" name="cost_label" defaultValue={session?.cost_label ?? undefined} placeholder="$10 drop-in" />
+
+        <div className="col-span-2">
+          <FormField label="Notes" name="notes" defaultValue={session?.notes} placeholder="RSVP required." />
+        </div>
+        <div className="col-span-2">
+          <FormField label="Contact / registration link" name="contact_link" defaultValue={session?.contact_link} />
+        </div>
+
+        <label className="flex items-center gap-2 text-xs text-muted-foreground col-span-2">
+          <input type="checkbox" name="featured" defaultChecked={session?.featured ?? false} />
+          Featured listing
+        </label>
+      </div>
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      {saved && <p className="text-xs text-green-500">Saved.</p>}
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="flex-1 text-sm font-bold bg-primary text-primary-foreground rounded-lg py-2 hover:opacity-90 transition-opacity disabled:opacity-50 font-display uppercase tracking-wide"
+        >
+          {isPending ? 'Saving…' : isNew ? 'Add session' : 'Save session'}
+        </button>
+        {session && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isPending}
+            className="text-sm font-semibold border border-destructive text-destructive rounded-lg px-3 py-2 hover:bg-destructive/10 transition-colors disabled:opacity-50"
+          >
+            Delete
+          </button>
+        )}
+      </div>
+    </form>
   )
 }
 

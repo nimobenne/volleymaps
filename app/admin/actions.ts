@@ -98,6 +98,69 @@ export async function updateVenue(formData: FormData) {
   return { ok: true }
 }
 
+function sessionFields(formData: FormData) {
+  const recurring = formData.get('recurring') === 'on'
+  const dayRaw = formData.get('day_of_week') as string
+  const specificDate = (formData.get('specific_date') as string) || null
+
+  return {
+    title: formData.get('title') as string,
+    recurring,
+    day_of_week: recurring && dayRaw !== '' ? parseInt(dayRaw) : null,
+    specific_date: recurring ? null : specificDate,
+    start_time: formData.get('start_time'),
+    end_time: formData.get('end_time'),
+    skill_level: (formData.get('skill_level') as string) || 'all',
+    notes: (formData.get('notes') as string) || null,
+    contact_link: (formData.get('contact_link') as string) || null,
+    cost_type: (formData.get('cost_type') as string) || 'unknown',
+    cost_label: (formData.get('cost_label') as string) || null,
+    featured: formData.get('featured') === 'on',
+  }
+}
+
+export async function updateSession(formData: FormData) {
+  if (!(await isAdminAuthenticated())) return { error: 'Unauthorized' }
+  const supabase = createAdminClient()
+
+  const sessionId = formData.get('session_id') as string
+  const { error } = await supabase
+    .from('game_sessions')
+    .update(sessionFields(formData))
+    .eq('id', sessionId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/')
+  revalidatePath('/venues/[slug]', 'page')
+  return { ok: true }
+}
+
+export async function addSession(formData: FormData) {
+  if (!(await isAdminAuthenticated())) return { error: 'Unauthorized' }
+  const supabase = createAdminClient()
+
+  const venueId = formData.get('venue_id') as string
+  const { error } = await supabase
+    .from('game_sessions')
+    .insert({ venue_id: venueId, ...sessionFields(formData) })
+  if (error) return { error: error.message }
+
+  revalidatePath('/')
+  revalidatePath('/venues/[slug]', 'page')
+  return { ok: true }
+}
+
+export async function deleteSession(id: string) {
+  if (!(await isAdminAuthenticated())) return { error: 'Unauthorized' }
+  const supabase = createAdminClient()
+  const { error } = await supabase.from('game_sessions').delete().eq('id', id)
+  if (error) return { error: error.message }
+
+  revalidatePath('/')
+  revalidatePath('/venues/[slug]', 'page')
+  return { ok: true }
+}
+
 export async function addVenue(formData: FormData) {
   if (!(await isAdminAuthenticated())) return { error: 'Unauthorized' }
   const supabase = createAdminClient()
