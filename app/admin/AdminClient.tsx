@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Submission, Venue } from '@/types'
-import { rejectSubmission, approveSubmission, addVenue, logoutAction } from './actions'
+import { rejectSubmission, approveSubmission, addVenue, updateVenue, logoutAction } from './actions'
 
 const DAY_OPTIONS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -12,7 +12,15 @@ function toSlug(name: string) {
 }
 
 export default function AdminClient({ submissions, venues }: { submissions: Submission[]; venues: Venue[] }) {
-  const [tab, setTab] = useState<'submissions' | 'venues'>('submissions')
+  const [tab, setTab] = useState<'submissions' | 'history' | 'venues'>('submissions')
+  const pending = submissions.filter(s => s.status === 'pending')
+  const decided = submissions.filter(s => s.status !== 'pending')
+
+  const TAB_LABEL: Record<typeof tab, string> = {
+    submissions: `Submissions ${pending.length > 0 ? `(${pending.length})` : ''}`,
+    history: `History ${decided.length > 0 ? `(${decided.length})` : ''}`,
+    venues: 'Venues',
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -29,21 +37,22 @@ export default function AdminClient({ submissions, venues }: { submissions: Subm
       </div>
 
       <div className="flex gap-1 mb-6 border border-border rounded-lg p-1 w-fit">
-        {(['submissions', 'venues'] as const).map(t => (
+        {(['submissions', 'history', 'venues'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`text-sm font-semibold px-4 py-1.5 rounded-md transition-colors capitalize ${
+            className={`text-sm font-semibold px-4 py-1.5 rounded-md transition-colors ${
               tab === t ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {t === 'submissions' ? `Submissions ${submissions.length > 0 ? `(${submissions.length})` : ''}` : 'Add Venue'}
+            {TAB_LABEL[t]}
           </button>
         ))}
       </div>
 
-      {tab === 'submissions' && <SubmissionsTab submissions={submissions} />}
-      {tab === 'venues' && <AddVenueTab venues={venues} />}
+      {tab === 'submissions' && <SubmissionsTab submissions={pending} />}
+      {tab === 'history' && <HistoryTab submissions={decided} />}
+      {tab === 'venues' && <VenuesTab venues={venues} />}
     </div>
   )
 }
@@ -57,6 +66,45 @@ function SubmissionsTab({ submissions }: { submissions: Submission[] }) {
     <div className="flex flex-col gap-4">
       {submissions.map(s => (
         <SubmissionCard key={s.id} submission={s} />
+      ))}
+    </div>
+  )
+}
+
+function HistoryTab({ submissions }: { submissions: Submission[] }) {
+  if (submissions.length === 0) {
+    return <p className="text-sm text-muted-foreground">No approved or rejected submissions yet.</p>
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {submissions.map(s => (
+        <div key={s.id} className="border border-border rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3 mb-1">
+            <div>
+              <h3 className="font-display font-bold text-base uppercase tracking-wide">{s.venue_name}</h3>
+              <p className="text-xs text-muted-foreground">{s.address}, {s.city}</p>
+            </div>
+            <span
+              className={`shrink-0 text-xs font-bold uppercase tracking-widest mt-0.5 ${
+                s.status === 'approved' ? 'text-green-500' : 'text-destructive'
+              }`}
+            >
+              {s.status}
+            </span>
+          </div>
+
+          {s.schedule && (
+            <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{s.schedule}</p>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            From: <span className="text-foreground">{s.name}</span> · {s.email}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Submitted {new Date(s.created_at).toLocaleDateString()}
+          </p>
+        </div>
       ))}
     </div>
   )
@@ -185,7 +233,7 @@ function SubmissionCard({ submission: s }: { submission: Submission }) {
   )
 }
 
-function AddVenueTab({ venues }: { venues: Venue[] }) {
+function VenuesTab({ venues }: { venues: Venue[] }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -297,20 +345,88 @@ function AddVenueTab({ venues }: { venues: Venue[] }) {
       {venues.length > 0 && (
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-            All venues ({venues.length})
+            All venues ({venues.length}) — click to edit
           </p>
           <div className="flex flex-col gap-1">
             {venues.map(v => (
-              <div key={v.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div>
-                  <span className="text-sm font-medium">{v.name}</span>
-                  <span className="text-xs text-muted-foreground ml-2">{v.city}</span>
-                </div>
-                <span className="text-xs text-muted-foreground capitalize">{v.type}</span>
-              </div>
+              <VenueRow key={v.id} venue={v} />
             ))}
           </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+function VenueRow({ venue: v }: { venue: Venue }) {
+  const [expanded, setExpanded] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const [slug, setSlug] = useState(v.slug)
+  const router = useRouter()
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(null)
+    setSaved(false)
+    const formData = new FormData(e.currentTarget)
+    startTransition(async () => {
+      const result = await updateVenue(formData)
+      if (result?.error) { setError(result.error); return }
+      setSaved(true)
+      router.refresh()
+    })
+  }
+
+  return (
+    <div className="border-b border-border last:border-0">
+      <button
+        type="button"
+        onClick={() => setExpanded(x => !x)}
+        className="flex items-center justify-between py-2 w-full text-left hover:opacity-80 transition-opacity"
+      >
+        <div>
+          <span className="text-sm font-medium">{v.name}</span>
+          <span className="text-xs text-muted-foreground ml-2">{v.city}</span>
+        </div>
+        <span className="text-xs text-muted-foreground capitalize">{v.type}</span>
+      </button>
+
+      {expanded && (
+        <form onSubmit={handleSubmit} className="pb-4 flex flex-col gap-3">
+          <input type="hidden" name="venue_id" value={v.id} />
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Name" name="name" defaultValue={v.name} required />
+            <FormField label="Slug" name="slug" value={slug} onChange={e => setSlug(e.target.value)} required />
+            <FormField label="Address" name="address" defaultValue={v.address} required />
+            <FormField label="City" name="city" defaultValue={v.city} required />
+            <FormField label="Lat" name="lat" defaultValue={String(v.lat)} required />
+            <FormField label="Lng" name="lng" defaultValue={String(v.lng)} required />
+            <FormField label="Website" name="website" defaultValue={v.website} />
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Type</label>
+              <select name="type" defaultValue={v.type}
+                className="rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="beach">Beach</option>
+                <option value="grass">Grass</option>
+                <option value="indoor">Indoor</option>
+              </select>
+            </div>
+          </div>
+
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          {saved && <p className="text-xs text-green-500">Saved.</p>}
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="text-sm font-bold bg-primary text-primary-foreground rounded-lg py-2 hover:opacity-90 transition-opacity disabled:opacity-50 font-display uppercase tracking-wide"
+          >
+            {isPending ? 'Saving…' : 'Save changes'}
+          </button>
+        </form>
       )}
     </div>
   )

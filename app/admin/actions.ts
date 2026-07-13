@@ -71,6 +71,33 @@ export async function approveSubmission(formData: FormData) {
   return { ok: true }
 }
 
+export async function updateVenue(formData: FormData) {
+  if (!(await isAdminAuthenticated())) return { error: 'Unauthorized' }
+  const supabase = createAdminClient()
+
+  const venueId = formData.get('venue_id') as string
+  const name = formData.get('name') as string
+  const address = formData.get('address') as string
+  const city = formData.get('city') as string
+  const type = formData.get('type') as string
+  const lat = parseFloat(formData.get('lat') as string)
+  const lng = parseFloat(formData.get('lng') as string)
+  const website = (formData.get('website') as string) || null
+  const slugInput = (formData.get('slug') as string) || toSlug(name)
+
+  if (isNaN(lat) || isNaN(lng)) return { error: 'Lat/Lng must be valid numbers' }
+
+  const { error } = await supabase
+    .from('venues')
+    .update({ name, address, city, type, lat, lng, website, slug: slugInput })
+    .eq('id', venueId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/')
+  revalidatePath('/venues/[slug]', 'page')
+  return { ok: true }
+}
+
 export async function addVenue(formData: FormData) {
   if (!(await isAdminAuthenticated())) return { error: 'Unauthorized' }
   const supabase = createAdminClient()
