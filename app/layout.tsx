@@ -37,9 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${barlowCondensed.variable} ${dmSans.variable} h-full`}
+      className={`${barlowCondensed.variable} ${dmSans.variable}`}
     >
-      <body className="h-full flex flex-col antialiased bg-background text-foreground">
+      <body className="min-h-dvh flex flex-col antialiased bg-background text-foreground">
         <header className="shrink-0 flex items-center justify-between px-4 md:px-6 h-13 border-b border-border bg-card z-30">
           <Link href="/" className="flex items-center gap-2 group">
             <Logo className="h-6 w-6 text-primary transition-transform group-hover:rotate-12" />
@@ -56,14 +56,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Link>
         </header>
 
-        <main className="flex-1 min-h-0">
+        <main className="flex-1">
           {children}
         </main>
 
         {/* Mobile bottom nav — footer links are hidden on mobile */}
         <MobileNav />
 
-        <footer className="shrink-0 hidden md:flex items-center justify-center gap-4 px-4 py-2 border-t border-border bg-card text-xs text-muted-foreground">
+        <footer className="shrink-0 hidden md:flex items-center justify-center gap-4 px-4 h-10 border-t border-border bg-card text-xs text-muted-foreground">
           <span>Toronto volleyball, all in one place.</span>
           <span className="text-border">·</span>
           <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
