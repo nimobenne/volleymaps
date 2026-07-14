@@ -36,7 +36,9 @@ async function getSessions(): Promise<GameSession[]> {
 }
 
 export default async function HomePage() {
-  const [venues, sessions] = await Promise.all([getVenues(), getSessions()])
+  const [venues, allSessions] = await Promise.all([getVenues(), getSessions()])
+  const approvedVenueIds = new Set(venues.map(v => v.id))
+  const sessions = allSessions.filter(s => approvedVenueIds.has(s.venue_id))
   return (
     <div className="h-[calc(100dvh-3.25rem)] md:h-[calc(100dvh-5.75rem)] overflow-hidden">
       <h1 className="sr-only">Find pickup volleyball games in Toronto</h1>
