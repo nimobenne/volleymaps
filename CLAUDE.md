@@ -27,7 +27,7 @@ Falls back to mock data (`lib/mock-data.ts`) when env vars are not set.
 <CONTEXT name="supabase">
 ## Supabase setup
 
-Run migrations in order in Supabase SQL Editor. `schema-v8.sql` (rsvps) applied 2026-07-13 — RSVP persistence verified live. `supabase/schema-v9.sql` (drops the wide-open rsvps RLS policies; API uses service role) applied 2026-07-14.
+Run migrations in order in Supabase SQL Editor. `schema-v8.sql` (rsvps) applied 2026-07-13 — RSVP persistence verified live. `supabase/schema-v9.sql` (drops the wide-open rsvps RLS policies; API uses service role) applied 2026-07-14. `supabase/schema-v10.sql` (locks down `newsletter_subscribers` RLS — table predates tracked migrations, policy state was never verified) drafted 2026-07-14, **PENDING manual run.**
 
 Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
 </CONTEXT>
@@ -38,8 +38,8 @@ Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
 - **venues** — name, type (beach/grass/indoor), address, city, lat, lng, slug, approved, website, photo_url
 - **game_sessions** — venue_id, title, day_of_week (0=Sun), specific_date, start_time, end_time, recurring, skill_level, notes, contact_link, featured, cost_type, cost_cents, cost_label
 - **submissions** — name, email, venue_name, address, city, type, website, schedule, contact_link, status (pending/approved/rejected)
-- **newsletter_subscribers** — email
-- **rsvps** — session_id (FK game_sessions, cascade), token (anon device token), created_at; unique(session_id, token). Defined in `supabase/schema-v8.sql` — run pending.
+- **newsletter_subscribers** — email. RLS status unverified since table predates migrations — `schema-v10.sql` locks it down, pending manual run.
+- **rsvps** — session_id (FK game_sessions, cascade), token (anon device token), created_at; unique(session_id, token). Schema from `schema-v8.sql`, RLS locked down in `schema-v9.sql`, both applied. 24h TTL enforced at read-time via `created_at` filter (not physical deletion) in `getCount()`.
 </CONTEXT>
 
 <CONTEXT name="structure">
@@ -56,7 +56,7 @@ app/
   contact/page.tsx         — contact + newsletter signup
   privacy/page.tsx         — PIPEDA privacy policy
   terms/page.tsx           — terms of use
-  api/rsvp/route.ts        — RSVP toggle (GET count + going, POST toggle); cleanupStale() deletes rows older than 24h on every request so counts don't linger onto future occurrences of a recurring session
+  api/rsvp/route.ts        — RSVP toggle (GET count + going, POST toggle). 24h TTL is enforced at read-time (getCount/mine both filter by created_at) so correctness never depends on deletion; physical cleanupStale() only runs on POST (a real user action), not GET, since GET fires on every page view with no rate limiting anywhere in the app — deleting on every read would turn traffic directly into DB write volume and is a free abuse vector
   sitemap.ts               — dynamic sitemap (static routes + approved venues)
   robots.ts                — robots.txt (blocks /admin)
   opengraph-image.tsx      — branded OG share image (edge runtime)
@@ -131,9 +131,13 @@ types/index.ts             — Venue, GameSession, Filters, CostType interfaces
 - [x] Audit report: `mdfiles/audit-2026-07.md` (15/20; open P2/P3 items listed there)
 - [x] `supabase/schema-v9.sql` run in Supabase SQL Editor (2026-07-14) — rsvps RLS locked down, anon key can no longer delete arbitrary RSVP rows
 - [x] RSVP 24h TTL (2026-07-14) — user was confused seeing "Going" tags with no way to tell if stale; rows older than 24h are now deleted automatically on each `/api/rsvp` request, so the count reflects only the last 24h and doesn't carry over to a recurring session's next occurrence
-- [x] RSVP avatar stack for FOMO (2026-07-14) — `RsvpButton.tsx` now renders up to 3 generic person-icon avatars + "+N" overflow next to the Going button, driven purely by the existing anonymous count (no names/identities collected — kept anonymous intentionally; named-RSVP was considered and deferred). Visually verified via Playwright (installed ad hoc, chromium only) at desktop 1400px and mobile 390px (iPhone-width) — avatar stack overlap, dark cutout border, and +N overflow all render correctly in both the sidebar and mobile drawer, no clipping. Verified using a temporary route stub (reverted after) since local `.env.local` has no Supabase creds and mock session IDs (`s1`, `s2`...) aren't UUIDs so the real endpoint 0s out locally anyway.
+- [x] RSVP avatar stack for FOMO (2026-07-14) — `RsvpButton.tsx` now renders up to 3 generic person-icon avatars + "+N" overflow next to the Going button, driven purely by the existing anonymous count (no names/identities collected — kept anonymous intentionally; named-RSVP was considered and deferred). Visually verified via Playwright (installed ad hoc, chromium only) at desktop 1400px, 390px, and iPhone SE 375px — avatar stack overlap, dark cutout border, and +N overflow all render correctly in both the sidebar and mobile drawer, no clipping.
+- [x] **3-agent max-effort review pass (2026-07-14)** — code/architecture, product/growth, and security agents reviewed the full project in parallel. Fixed from their findings: RSVP count/going correctness no longer depends on `cleanupStale()` succeeding (both now filter by `created_at` directly); moved physical cleanup off the GET hot path (was a free DoS/cost vector — unauthenticated, unrate-limited, fired on every page view); privacy policy now discloses the anonymous RSVP token + 24h auto-delete and its "last updated" date was bumped. Drafted `schema-v10.sql` for the newsletter RLS gap (see above, pending run). Remaining findings intentionally NOT auto-fixed — logged below for a deliberate decision rather than silently building on top:
+- [ ] **RSVP counts are spoofable** — `POST /api/rsvp` has no rate limiting (none exists anywhere in the app — no `middleware.ts`, no rate-limit dependency). A script looping random UUIDs can inflate any session's count/avatar stack, undermining the FOMO feature's premise. Needs a real decision on approach (per-IP throttle, token-cookie binding, etc.) before more is built on top of the count.
+- [ ] **Map pins don't update after first render** — `components/Map.tsx` gates marker creation behind a one-shot `markersRef.current.length === 0` check, so new/edited/deleted venues never get pin updates without a hard reload, despite the on-demand ISR work that was specifically built to make new venues appear immediately.
+- [ ] **Unapproved venue sessions aren't filtered server-side** — `app/page.tsx`'s `getSessions()` has no `.eq('approved', true)` filter (unlike `getVenues()`). Currently harmless since every insert path hardcodes `approved: true`, but it's latent — one workflow change away from leaking full session data (notes, contact links) for hidden venues to every client.
 - [ ] Optional: set `ADMIN_SESSION_SECRET` in Vercel (falls back to key derived from ADMIN_PASSWORD)
-- [ ] Verify in Supabase dashboard: `newsletter_subscribers` has RLS on with no anon policies
+- [ ] Optional/low-priority: no lockout on repeated failed `/admin/login` attempts
 - [ ] Local `.env.local` has empty Supabase values — pull real ones (`vercel env pull`) to dev against live data
 - [ ] Visual-test mobile drawer/nav/popover on real devices (iPhone SE + notched)
 - [ ] Cherry Beach organized mixed 6s — add when organizer info available
@@ -142,10 +146,20 @@ types/index.ts             — Venue, GameSession, Filters, CostType interfaces
 <CONTEXT name="next-up">
 ## Next up
 
-- Organizer portal (Supabase Auth)
-- Featured listings + Stripe (monetization)
-- Expand beyond Toronto
-- LiveFeed virtualization (only worth it at 200+ sessions)
+Prioritized 2026-07-14 by the product-review agent, grounded in what's actually in the codebase now:
+
+1. Fix RSVP rate limiting first (see STATUS) — building more on a spoofable count compounds the problem.
+2. Share a session's going-count — `ShareButton.tsx` already exists (clipboard copy) but only on the venue page and doesn't mention who's going. Add a session-level share on `GameCard` including the live count. Direct compounding move on RSVP + avatar stack, hours of work.
+3. Expose the `featured` toggle in admin — `game_sessions.featured` and its GameCard badge already exist and render, but the admin session form never exposes a way to set it. Adding a checkbox lets featured slots be sold/comped manually (e-transfer, DM) to prove organizers will pay *before* writing Stripe integration.
+4. Turn on the Vercel Analytics dashboard tab (package + component are already installed, just needs the toggle in Vercel's dashboard) — every prioritization call below is a guess without real traffic data.
+5. "Joined in the last hour" momentum chip — `rsvps.created_at` already supports this with zero schema change, reusing the existing Live/Soon badge pattern.
+
+Deferred, with reasons (not just parked):
+- **Featured listings + Stripe** — right idea, wrong sequencing. Validate demand with the manual admin toggle (#3) first; only build checkout once an organizer has actually asked to pay.
+- **Organizer portal (Supabase Auth)** — no demand signal yet (`submissions` is a one-shot form, not accounts), and it's a real architecture change (auth + per-owner RLS) against tables currently gated by one shared admin password.
+- **Expand beyond Toronto** — "Toronto" and `America/Toronto` are hardcoded across ~18 files including the live/soon time logic in `lib/sessions.ts`. This is a multi-day rewrite, not a config flag, and there's no traffic data yet (#4) to justify it.
+- **LiveFeed virtualization** — correctly deferred, nowhere near the 200-session trigger.
+- **Push/email nudges** — explicitly not recommended yet; would need new infrastructure (service worker, subscription table, email-sending library) that doesn't exist, not a compounding move on what's shipped.
 </CONTEXT>
 
 <RULE name="keep-updated">

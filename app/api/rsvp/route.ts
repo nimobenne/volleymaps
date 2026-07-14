@@ -25,11 +25,16 @@ async function cleanupStale(supabase: ReturnType<typeof getSupabase>, sessionId:
   if (error) console.error('[rsvp] cleanup error:', error.message)
 }
 
+// Filters by created_at directly so counts are correct even if a cleanup
+// delete was skipped or hasn't run yet — correctness never depends on the
+// physical DELETE succeeding.
 async function getCount(supabase: ReturnType<typeof getSupabase>, sessionId: string) {
+  const cutoff = new Date(Date.now() - RSVP_TTL_MS).toISOString()
   const { count, error } = await supabase
     .from('rsvps')
     .select('*', { count: 'exact', head: true })
     .eq('session_id', sessionId)
+    .gte('created_at', cutoff)
   if (error) console.error('[rsvp] count error:', error.message)
   return count ?? 0
 }
@@ -40,13 +45,18 @@ export async function GET(req: NextRequest) {
   const token = url.searchParams.get('token')
   if (!sessionId || !UUID_RE.test(sessionId)) return NextResponse.json({ count: 0, going: false })
 
+  // No physical cleanup here — GET fires on every page view (unauthenticated,
+  // no rate limiting in this app), so deleting on every read turns page
+  // traffic directly into DB write volume. getCount()'s created_at filter
+  // already makes reads correct regardless; physical deletion happens
+  // opportunistically on POST (an actual user action) instead.
   const supabase = getSupabase()
-  await cleanupStale(supabase, sessionId)
+  const cutoff = new Date(Date.now() - RSVP_TTL_MS).toISOString()
 
   const [count, { data: mine }] = await Promise.all([
     getCount(supabase, sessionId),
     token && UUID_RE.test(token)
-      ? supabase.from('rsvps').select('id').eq('session_id', sessionId).eq('token', token).maybeSingle()
+      ? supabase.from('rsvps').select('id').eq('session_id', sessionId).eq('token', token).gte('created_at', cutoff).maybeSingle()
       : Promise.resolve({ data: null }),
   ])
 

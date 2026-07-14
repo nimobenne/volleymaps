@@ -18,7 +18,7 @@ export default function PrivacyPage() {
 
       <div className="h-1 w-10 rounded-full mb-4" style={{ backgroundColor: 'oklch(0.82 0.17 75)' }} />
       <h1 className="font-display font-bold text-3xl uppercase tracking-wide mb-2">Privacy Policy</h1>
-      <p className="text-sm text-muted-foreground mb-8">Last updated: May 2026</p>
+      <p className="text-sm text-muted-foreground mb-8">Last updated: July 2026</p>
 
       <div className="prose prose-sm prose-invert max-w-none flex flex-col gap-6 text-sm leading-relaxed text-foreground/90">
 
@@ -36,6 +36,7 @@ export default function PrivacyPage() {
             <li>Venue details you provide (location name, address, schedule)</li>
           </ul>
           <p>We do not collect any personal information from people who simply browse the map. We use no tracking pixels and no advertising cookies. We use Vercel Web Analytics to see aggregate traffic numbers (like page views and referring sites) — it does not use cookies and does not identify individual visitors.</p>
+          <p>If you tap &quot;Going&quot; on a session, your browser generates a random anonymous token (not linked to your name, email, or any other identifying information) to power the going-count. This token and its associated record are automatically deleted after 24 hours.</p>
         </section>
 
         <section className="flex flex-col gap-2">
