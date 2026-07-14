@@ -70,27 +70,45 @@ export default function Map({ venues, sessions, typeFilter, skillFilter = 'all',
     const updateMarkers = () => {
       const q = searchQuery.toLowerCase()
 
-      // Create the markers once, then only update them on filter changes
-      if (markersRef.current.length === 0) {
-        venues.forEach(venue => {
-          const color = TYPE_COLORS[venue.type] ?? TYPE_COLORS.indoor
-          const el = createPinElement({
-            color,
-            isLive: false,
-            isMobile: window.innerWidth < 768,
-          })
-          el.title = venue.name
-          el.addEventListener('click', (e) => {
-            e.stopPropagation()
-            setSelectedVenue(venue)
-            onPinTapRef.current?.()
-          })
-          const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-            .setLngLat([venue.lng, venue.lat])
-            .addTo(map)
-          markersRef.current.push({ marker, venueId: venue.id, el })
+      // Diff venues against existing markers — add new, remove gone,
+      // reposition moved. Previously this only ran once (guarded by
+      // markersRef.current.length === 0), so venues added/removed/edited
+      // after first mount never got a marker update without a hard reload.
+      const currentVenueIds = new Set(venues.map(v => v.id))
+
+      // Remove markers for venues that no longer exist (deleted or unapproved)
+      markersRef.current = markersRef.current.filter(({ marker, venueId }) => {
+        if (currentVenueIds.has(venueId)) return true
+        marker.remove()
+        return false
+      })
+
+      const existingVenueIds = new Set(markersRef.current.map(m => m.venueId))
+
+      venues.forEach(venue => {
+        if (existingVenueIds.has(venue.id)) {
+          // Reposition in case lat/lng was edited in admin
+          const entry = markersRef.current.find(m => m.venueId === venue.id)
+          entry?.marker.setLngLat([venue.lng, venue.lat])
+          return
+        }
+        const color = TYPE_COLORS[venue.type] ?? TYPE_COLORS.indoor
+        const el = createPinElement({
+          color,
+          isLive: false,
+          isMobile: window.innerWidth < 768,
         })
-      }
+        el.title = venue.name
+        el.addEventListener('click', (e) => {
+          e.stopPropagation()
+          setSelectedVenue(venue)
+          onPinTapRef.current?.()
+        })
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([venue.lng, venue.lat])
+          .addTo(map)
+        markersRef.current.push({ marker, venueId: venue.id, el })
+      })
 
       // Update opacity + live pulse in place — no destroy/recreate, no flash
       markersRef.current.forEach(({ venueId, el }) => {
