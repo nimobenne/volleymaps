@@ -27,7 +27,7 @@ Falls back to mock data (`lib/mock-data.ts`) when env vars are not set.
 <CONTEXT name="supabase">
 ## Supabase setup
 
-Run migrations in order in Supabase SQL Editor. `schema-v8.sql` (rsvps) applied 2026-07-13 — RSVP persistence verified live. Latest: `supabase/schema-v9.sql` (drops the wide-open rsvps RLS policies; API uses service role) — **PENDING manual run.**
+Run migrations in order in Supabase SQL Editor. `schema-v8.sql` (rsvps) applied 2026-07-13 — RSVP persistence verified live. `supabase/schema-v9.sql` (drops the wide-open rsvps RLS policies; API uses service role) applied 2026-07-14.
 
 Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
 </CONTEXT>
@@ -56,7 +56,7 @@ app/
   contact/page.tsx         — contact + newsletter signup
   privacy/page.tsx         — PIPEDA privacy policy
   terms/page.tsx           — terms of use
-  api/rsvp/route.ts        — RSVP toggle (GET count + going, POST toggle)
+  api/rsvp/route.ts        — RSVP toggle (GET count + going, POST toggle); cleanupStale() deletes rows older than 24h on every request so counts don't linger onto future occurrences of a recurring session
   sitemap.ts               — dynamic sitemap (static routes + approved venues)
   robots.ts                — robots.txt (blocks /admin)
   opengraph-image.tsx      — branded OG share image (edge runtime)
@@ -129,7 +129,9 @@ types/index.ts             — Venue, GameSession, Filters, CostType interfaces
 - [x] Design pass — SVG volleyball logo + two-tone wordmark, Lucide mobile nav w/ active state, floodlight wash on map, court-line accent on feed header; live/soon chips use theme tokens
 - [x] Dead deps removed (pocketbase + 5 legacy scripts); .env.local.example fixed (was PocketBase-only)
 - [x] Audit report: `mdfiles/audit-2026-07.md` (15/20; open P2/P3 items listed there)
-- [ ] **Run `supabase/schema-v9.sql` in Supabase SQL Editor** — locks down rsvps RLS (currently anon key can delete all RSVP rows)
+- [x] `supabase/schema-v9.sql` run in Supabase SQL Editor (2026-07-14) — rsvps RLS locked down, anon key can no longer delete arbitrary RSVP rows
+- [x] RSVP 24h TTL (2026-07-14) — user was confused seeing "Going" tags with no way to tell if stale; rows older than 24h are now deleted automatically on each `/api/rsvp` request, so the count reflects only the last 24h and doesn't carry over to a recurring session's next occurrence
+- [x] RSVP avatar stack for FOMO (2026-07-14) — `RsvpButton.tsx` now renders up to 3 generic person-icon avatars + "+N" overflow next to the Going button, driven purely by the existing anonymous count (no names/identities collected — kept anonymous intentionally; named-RSVP was considered and deferred). Visually verified via Playwright (installed ad hoc, chromium only) at desktop 1400px and mobile 390px (iPhone-width) — avatar stack overlap, dark cutout border, and +N overflow all render correctly in both the sidebar and mobile drawer, no clipping. Verified using a temporary route stub (reverted after) since local `.env.local` has no Supabase creds and mock session IDs (`s1`, `s2`...) aren't UUIDs so the real endpoint 0s out locally anyway.
 - [ ] Optional: set `ADMIN_SESSION_SECRET` in Vercel (falls back to key derived from ADMIN_PASSWORD)
 - [ ] Verify in Supabase dashboard: `newsletter_subscribers` has RLS on with no anon policies
 - [ ] Local `.env.local` has empty Supabase values — pull real ones (`vercel env pull`) to dev against live data

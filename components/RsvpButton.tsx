@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { User } from 'lucide-react'
 
 interface RsvpButtonProps {
   sessionId: string
@@ -87,18 +88,42 @@ export default function RsvpButton({ sessionId }: RsvpButtonProps) {
 
   if (count === null) return null
 
+  const MAX_AVATARS = 3
+  const shown = Math.min(count, MAX_AVATARS)
+  const overflow = count - shown
+
   return (
-    <button
-      onClick={toggle}
-      disabled={loading}
-      aria-pressed={going}
-      className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 min-h-[28px] rounded-full border transition-all ${
-        going
-          ? 'bg-primary/15 text-primary border-primary/40'
-          : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
-      }`}
-    >
-      {going ? '✓ Going' : 'Going'}{count > 0 ? ` (${count})` : ''}
-    </button>
+    <div className="inline-flex items-center gap-1.5">
+      {count > 0 && (
+        <div className="flex items-center -space-x-1.5" aria-hidden="true">
+          {Array.from({ length: shown }).map((_, i) => (
+            <span
+              key={i}
+              className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-background bg-primary/20 text-primary"
+            >
+              <User className="h-2.5 w-2.5" strokeWidth={2.5} />
+            </span>
+          ))}
+          {overflow > 0 && (
+            <span className="flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full border-2 border-background bg-muted text-[9px] font-bold text-muted-foreground">
+              +{overflow}
+            </span>
+          )}
+        </div>
+      )}
+      <button
+        onClick={toggle}
+        disabled={loading}
+        aria-pressed={going}
+        aria-label={going ? `Cancel RSVP${count > 0 ? `, ${count} going` : ''}` : `RSVP going${count > 0 ? `, ${count} already going` : ''}`}
+        className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 min-h-[28px] rounded-full border transition-all ${
+          going
+            ? 'bg-primary/15 text-primary border-primary/40'
+            : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
+        }`}
+      >
+        {going ? '✓ Going' : 'Going'}{count > 0 ? ` (${count})` : ''}
+      </button>
+    </div>
   )
 }

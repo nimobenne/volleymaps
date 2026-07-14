@@ -10,6 +10,21 @@ function getSupabase() {
   )
 }
 
+const RSVP_TTL_MS = 24 * 60 * 60 * 1000
+
+// RSVPs are "going today" signals, not permanent attendance records — wipe
+// anything older than 24h so counts don't linger across future occurrences
+// of a recurring session.
+async function cleanupStale(supabase: ReturnType<typeof getSupabase>, sessionId: string) {
+  const cutoff = new Date(Date.now() - RSVP_TTL_MS).toISOString()
+  const { error } = await supabase
+    .from('rsvps')
+    .delete()
+    .eq('session_id', sessionId)
+    .lt('created_at', cutoff)
+  if (error) console.error('[rsvp] cleanup error:', error.message)
+}
+
 async function getCount(supabase: ReturnType<typeof getSupabase>, sessionId: string) {
   const { count, error } = await supabase
     .from('rsvps')
@@ -26,6 +41,7 @@ export async function GET(req: NextRequest) {
   if (!sessionId || !UUID_RE.test(sessionId)) return NextResponse.json({ count: 0, going: false })
 
   const supabase = getSupabase()
+  await cleanupStale(supabase, sessionId)
 
   const [count, { data: mine }] = await Promise.all([
     getCount(supabase, sessionId),
@@ -55,6 +71,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getSupabase()
+  await cleanupStale(supabase, sessionId)
 
   // Toggle atomically: try to delete an existing RSVP first; if nothing was
   // deleted, insert. A concurrent duplicate insert hits the unique constraint
