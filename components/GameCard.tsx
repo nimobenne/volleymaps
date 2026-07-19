@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { GameSession, Venue } from '@/types'
 import { formatTime, isLiveNow, isStartingSoon } from '@/lib/sessions'
-import { getVenueColor } from '@/lib/utils'
 import { buildCalendarUrls } from '@/lib/calendar'
 import { ExternalLink, CalendarPlus } from 'lucide-react'
 import Link from 'next/link'
@@ -30,8 +29,6 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
   const [calOpen, setCalOpen] = useState(false)
   const calRef = useRef<HTMLDivElement>(null)
 
-  const venueColor = getVenueColor(venue.type)
-
   const isOneTime = !session.recurring && !!session.specific_date
   const { googleUrl, icsUri } = buildCalendarUrls(session, venue)
 
@@ -56,10 +53,8 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
   }, [calOpen])
 
   return (
-    <div className={`group flex gap-3 py-3 border-b border-border last:border-0 transition-opacity ${dimmed ? 'opacity-40' : 'opacity-100'}`}>
-      <div className="shrink-0 w-1 rounded-full mt-0.5" style={{ backgroundColor: venueColor }} />
-
-      <div className="flex-1 min-w-0">
+    <div className={`group py-3 border-b border-border last:border-0 transition-opacity ${dimmed ? 'opacity-40' : 'opacity-100'}`}>
+      <div className="min-w-0">
         {showVenueName && (
           <Link
             href={`/venues/${venue.slug}`}
@@ -88,7 +83,7 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
         </div>
 
         {/* Time is the bold anchor */}
-        <p className="text-sm font-bold tabular-nums mt-0.5" style={{ color: 'oklch(0.88 0.020 75)' }}>
+        <p className="text-sm font-bold tabular-nums mt-0.5 text-foreground/90">
           {formatTime(session.start_time)} – {formatTime(session.end_time)}
           {dateDisplay && <span className="font-normal text-muted-foreground ml-1.5">{dateDisplay}</span>}
         </p>
@@ -98,14 +93,12 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
           <span className="text-[11px] text-muted-foreground">{SKILL_LABEL[session.skill_level]}</span>
           <CostChip costType={session.cost_type} costCents={session.cost_cents} costLabel={session.cost_label} />
           {isOneTime && (
-            <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
-              style={{ backgroundColor: 'oklch(0.52 0.23 263 / 15%)', color: 'oklch(0.70 0.14 218)' }}>
+            <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-indoor/15 text-indoor-soft">
               One-time
             </span>
           )}
           {session.featured && (
-            <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
-              style={{ backgroundColor: 'oklch(0.82 0.17 75 / 15%)', color: 'oklch(0.82 0.17 75)' }}>
+            <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">
               Featured
             </span>
           )}
