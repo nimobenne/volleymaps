@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { getVenueBySlug, getVenueSessions } from '@/lib/data'
 
 export const revalidate = 1800
 
@@ -20,20 +21,10 @@ const SKILL_LABEL: Record<string, string> = {
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
-  const { data: venue, error: venueErr } = await supabase.from('venues').select('*').eq('slug', slug).eq('approved', true).single()
-  if (venueErr) console.error('[embed] venue fetch error:', venueErr.message)
+  const venue = await getVenueBySlug(slug)
   if (!venue) return new Response('Not found', { status: 404 })
 
-  const { data: sessions } = await supabase
-    .from('game_sessions').select('*').eq('venue_id', venue.id).order('day_of_week').order('start_time')
-
-  const all = (sessions ?? []) as { title: string; day_of_week: number | null; start_time: string; end_time: string; skill_level: string; recurring: boolean; specific_date?: string }[]
+  const all = await getVenueSessions(venue.id)
   const recurring = all.filter(s => s.recurring && s.day_of_week != null)
   const byDay = DAY_FULL.map((day, i) => ({ day, ss: recurring.filter(s => s.day_of_week === i) })).filter(d => d.ss.length)
   const oneOffs = all.filter(s => !s.recurring && s.specific_date)

@@ -7,29 +7,19 @@ import { Separator } from '@/components/ui/separator'
 import { DAY_NAMES_FULL } from '@/lib/sessions'
 import Link from 'next/link'
 import Image from 'next/image'
-import { MOCK_VENUES, MOCK_SESSIONS } from '@/lib/mock-data'
 import { getVenueColor, getVenueLabel } from '@/lib/utils'
+import { getVenueBySlug, getVenueSessions } from '@/lib/data'
 import type { Metadata } from 'next'
 
 export const revalidate = 3600
-
-const USE_MOCK = !process.env.NEXT_PUBLIC_SUPABASE_URL
 
 interface PageProps {
   params: Promise<{ slug: string }>
 }
 
-async function getVenue(slug: string): Promise<Venue | null> {
-  if (USE_MOCK) return MOCK_VENUES.find(v => v.slug === slug) ?? null
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-  const { data } = await supabase.from('venues').select('*').eq('slug', slug).eq('approved', true).single()
-  return (data as Venue) ?? null
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const venue = await getVenue(slug)
+  const venue = await getVenueBySlug(slug)
   if (!venue) return { title: 'Venue Not Found — VolleyMaps' }
   const typeLabel = venue.type === 'beach' ? 'Beach' : venue.type === 'grass' ? 'Grass' : 'Indoor'
   return {
@@ -48,21 +38,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function VenuePage({ params }: PageProps) {
   const { slug } = await params
 
-  const venue = await getVenue(slug)
-  let allSessions: GameSession[] = []
-
-  if (venue) {
-    if (USE_MOCK) {
-      allSessions = MOCK_SESSIONS.filter(s => s.venue_id === venue.id)
-    } else {
-      const { createClient } = await import('@supabase/supabase-js')
-      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-      const { data } = await supabase.from('game_sessions').select('*').eq('venue_id', venue.id).order('day_of_week').order('start_time')
-      allSessions = (data ?? []) as GameSession[]
-    }
-  }
-
+  const venue = await getVenueBySlug(slug)
   if (!venue) notFound()
+
+  const allSessions: GameSession[] = await getVenueSessions(venue.id)
 
   const recurring = allSessions.filter(s => s.recurring)
   const oneOffs = allSessions.filter(s => !s.recurring && s.specific_date)
@@ -186,7 +165,7 @@ export default async function VenuePage({ params }: PageProps) {
               <div key={day}>
                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">{day}</h3>
                 {daySessions.map(s => (
-                  <GameCard key={s.id} session={s} venue={venue as Venue} showVenueName={false} />
+                  <GameCard key={s.id} session={s} venue={venue} showVenueName={false} />
                 ))}
               </div>
             ))}
@@ -200,7 +179,7 @@ export default async function VenuePage({ params }: PageProps) {
           <section>
             <h2 className="font-display font-bold text-xl uppercase tracking-wide mb-5">Upcoming One-Offs</h2>
             {oneOffs.map(s => (
-              <GameCard key={s.id} session={s} venue={venue as Venue} showVenueName={false} />
+              <GameCard key={s.id} session={s} venue={venue} showVenueName={false} />
             ))}
           </section>
         </>
