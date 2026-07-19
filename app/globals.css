@@ -32,6 +32,8 @@
   /* App accent colors */
   --color-beach: var(--beach);
   --color-indoor: var(--indoor);
+  --color-indoor-soft: var(--indoor-soft);
+  --color-grass: var(--grass);
   --color-live: var(--live);
   --color-soon: var(--soon);
 
@@ -76,6 +78,8 @@
   /* Venue type accents — Mikasa volleyball palette */
   --beach:  oklch(0.82 0.170 75);   /* Mikasa gold/amber */
   --indoor: oklch(0.52 0.230 263);  /* Mikasa cobalt blue */
+  --indoor-soft: oklch(0.70 0.140 218); /* readable indoor accent on dark (matches getVenueColor) */
+  --grass:  oklch(0.55 0.180 145);
 
   /* Status colors */
   --live:   oklch(0.68 0.210 145);  /* vivid green */

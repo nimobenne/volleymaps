@@ -5,7 +5,7 @@ import { Venue, GameSession, TypeFilter, SkillFilter, DayFilter } from '@/types'
 import { getAllSessionsSorted, isLiveNow, isStartingSoon } from '@/lib/sessions'
 import GameCard from './GameCard'
 import { Skeleton } from '@/components/ui/skeleton'
-import { MapPin } from 'lucide-react'
+import { MapPin, Volleyball } from 'lucide-react'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -143,7 +143,7 @@ export default function LiveFeed({
       <div className="flex-1 overflow-y-auto overscroll-contain">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-6 py-16">
-            <span className="text-5xl mb-4 opacity-60">🏐</span>
+            <Volleyball className="h-12 w-12 mb-4 text-muted-foreground/60" strokeWidth={1.5} aria-hidden />
             <p className="text-sm font-semibold">No sessions found</p>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
               No games match your current filters.

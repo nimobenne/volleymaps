@@ -57,8 +57,7 @@ export default function VenuePopover({ venue, sessions, onClose }: VenuePopoverP
                 {typeLabel}
               </span>
               {isNewVenue(venue) && (
-                <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: 'oklch(0.82 0.17 75 / 20%)', color: 'oklch(0.82 0.17 75)' }}>
+                <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">
                   New
                 </span>
               )}

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Waves, Trees, Building2, SlidersHorizontal, LucideIcon } from 'lucide-react'
 
 type TypeFilter = 'all' | 'beach' | 'indoor' | 'grass'
@@ -66,10 +67,32 @@ function PillRow<T extends string>({ options, active, onSelect, pillSize = 'md' 
 }
 
 export default function Filters({ typeFilter, onTypeChange, skillFilter, onSkillChange, dayFilter, onDayChange }: FiltersProps) {
+  // On mobile the day + skill rows hide behind one toggle so the map isn't
+  // buried under three rows of pills. Desktop always shows everything.
+  const [moreOpen, setMoreOpen] = useState(false)
+  const refinementCount = (dayFilter !== 'all' ? 1 : 0) + (skillFilter !== 'all' ? 1 : 0)
+
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <PillRow options={TYPE_OPTIONS} active={typeFilter} onSelect={onTypeChange} pillSize="md" />
-      <div className="w-full overflow-x-auto">
+      <div className="flex items-center gap-1.5">
+        <PillRow options={TYPE_OPTIONS} active={typeFilter} onSelect={onTypeChange} pillSize="md" />
+        <button
+          onClick={() => setMoreOpen(o => !o)}
+          aria-expanded={moreOpen}
+          aria-label={`${moreOpen ? 'Hide' : 'Show'} day and skill filters${refinementCount > 0 ? `, ${refinementCount} active` : ''}`}
+          className={`md:hidden relative flex items-center justify-center rounded-full border min-h-[36px] min-w-[36px] shadow-lg shadow-black/30 transition-all duration-150 ${
+            moreOpen || refinementCount > 0 ? activeCls + ' border-transparent' : inactiveCls
+          }`}
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          {refinementCount > 0 && (
+            <span aria-hidden className="absolute -top-1 -right-1 flex items-center justify-center h-4 min-w-[16px] px-0.5 rounded-full bg-foreground text-background text-[9px] font-bold">
+              {refinementCount}
+            </span>
+          )}
+        </button>
+      </div>
+      <div className={`${moreOpen ? 'block' : 'hidden'} md:block w-full overflow-x-auto`}>
         <div className="flex items-center gap-1.5 w-max mx-auto">
           <PillRow options={DAY_OPTIONS} active={dayFilter} onSelect={onDayChange} pillSize="sm" />
           <div className="w-px h-5 bg-border shrink-0" />
