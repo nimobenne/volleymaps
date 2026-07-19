@@ -22,19 +22,57 @@ function getToken(): string {
 
 interface RsvpState { count: number; going: boolean }
 
-// LiveFeed is mounted twice (desktop aside + mobile drawer), so each session's
-// RSVP button renders twice. Share one initial fetch per session and broadcast
-// toggles so both instances stay in sync.
-const initialFetch = new Map<string, Promise<RsvpState>>()
+// Every rendered GameCard mounts one of these buttons (feed renders the whole
+// week, and LiveFeed is mounted twice: desktop aside + mobile drawer). Instead
+// of one GET per button, mounts within the same commit enqueue their sessionId
+// and a microtask flushes a single batched GET for all of them. Results are
+// cached per session and toggles broadcast a sync event so duplicate mounts
+// stay in sync.
+const stateCache = new Map<string, Promise<RsvpState>>()
 const SYNC_EVENT = 'vm:rsvp-sync'
+const MAX_BATCH_IDS = 100
+
+let pendingBatch: Map<string, (s: RsvpState) => void> | null = null
+
+function flushBatch(batch: Map<string, (s: RsvpState) => void>) {
+  const ids = [...batch.keys()]
+  const token = getToken()
+  for (let i = 0; i < ids.length; i += MAX_BATCH_IDS) {
+    const chunk = ids.slice(i, i + MAX_BATCH_IDS)
+    fetch(`/api/rsvp?sessionIds=${chunk.join(',')}&token=${encodeURIComponent(token)}`)
+      .then(r => {
+        if (!r.ok) throw new Error('rsvp batch failed')
+        return r.json()
+      })
+      .then((data: { counts: Record<string, number>; going: string[] }) => {
+        const goingSet = new Set(data.going)
+        for (const id of chunk) {
+          batch.get(id)?.({ count: data.counts[id] ?? 0, going: goingSet.has(id) })
+        }
+      })
+      .catch(() => {
+        // Leave the promises unresolved on failure — buttons simply stay
+        // hidden (count === null), same behavior as the old per-card fetch.
+        for (const id of chunk) stateCache.delete(id)
+      })
+  }
+}
 
 function fetchInitial(sessionId: string): Promise<RsvpState> {
-  let p = initialFetch.get(sessionId)
+  let p = stateCache.get(sessionId)
   if (!p) {
-    const token = getToken()
-    p = fetch(`/api/rsvp?sessionId=${encodeURIComponent(sessionId)}&token=${encodeURIComponent(token)}`)
-      .then(r => r.json())
-    initialFetch.set(sessionId, p)
+    p = new Promise<RsvpState>(resolve => {
+      if (!pendingBatch) {
+        pendingBatch = new Map()
+        const batch = pendingBatch
+        queueMicrotask(() => {
+          pendingBatch = null
+          flushBatch(batch)
+        })
+      }
+      pendingBatch.set(sessionId, resolve)
+    })
+    stateCache.set(sessionId, p)
   }
   return p
 }
@@ -76,7 +114,7 @@ export default function RsvpButton({ sessionId }: RsvpButtonProps) {
       const data: RsvpState = await res.json()
       setCount(data.count)
       setGoing(data.going)
-      initialFetch.set(sessionId, Promise.resolve(data))
+      stateCache.set(sessionId, Promise.resolve(data))
       window.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: { sessionId, ...data } }))
     } catch {
       setGoing(wasGoing)
@@ -122,7 +160,7 @@ export default function RsvpButton({ sessionId }: RsvpButtonProps) {
             : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
         }`}
       >
-        {going ? '✓ Going' : 'Going'}{count > 0 ? ` (${count})` : ''}
+        {going ? '✓ Going' : `I'm going`}
       </button>
     </div>
   )
