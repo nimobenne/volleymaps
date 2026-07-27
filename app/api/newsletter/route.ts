@@ -12,8 +12,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
   }
 
+  const normalized = email.toLowerCase().trim()
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!email || !emailRe.test(email)) {
+  if (!normalized || !emailRe.test(normalized)) {
     return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
   }
 
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   const { error } = await supabase
     .from('newsletter_subscribers')
-    .upsert({ email: email.toLowerCase().trim() }, { onConflict: 'email' })
+    .upsert({ email: normalized }, { onConflict: 'email' })
 
   if (error) {
     console.error('[newsletter] supabase error:', error.message)

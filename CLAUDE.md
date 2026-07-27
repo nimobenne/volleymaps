@@ -27,7 +27,7 @@ Falls back to mock data (`lib/mock-data.ts`) when env vars are not set.
 <CONTEXT name="supabase">
 ## Supabase setup
 
-Run migrations in order in Supabase SQL Editor. `schema-v8.sql` (rsvps) applied 2026-07-13 — RSVP persistence verified live. `supabase/schema-v9.sql` (drops the wide-open rsvps RLS policies; API uses service role) applied 2026-07-14. `supabase/schema-v10.sql` (locks down `newsletter_subscribers` RLS — table predates tracked migrations, policy state was never verified) drafted 2026-07-14, **PENDING manual run.**
+Run migrations in order in Supabase SQL Editor. `schema-v8.sql` (rsvps) applied 2026-07-13 — RSVP persistence verified live. `supabase/schema-v9.sql` (drops the wide-open rsvps RLS policies; API uses service role) applied 2026-07-14. `supabase/schema-v10.sql` (locks down `newsletter_subscribers` RLS) applied and verified 2026-07-27.
 
 Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
 </CONTEXT>
@@ -38,7 +38,7 @@ Seed: `node scripts/seed-supabase.mjs <project-url> <service-role-key>`
 - **venues** — name, type (beach/grass/indoor), address, city, lat, lng, slug, approved, website, photo_url
 - **game_sessions** — venue_id, title, day_of_week (0=Sun), specific_date, start_time, end_time, recurring, skill_level, notes, contact_link, featured, cost_type, cost_cents, cost_label
 - **submissions** — name, email, venue_name, address, city, type, website, schedule, contact_link, status (pending/approved/rejected)
-- **newsletter_subscribers** — email. RLS status unverified since table predates migrations — `schema-v10.sql` locks it down, pending manual run.
+- **newsletter_subscribers** — email. RLS locked down via `schema-v10.sql`, applied and verified 2026-07-27.
 - **rsvps** — session_id (FK game_sessions, cascade), token (anon device token), created_at; unique(session_id, token). Schema from `schema-v8.sql`, RLS locked down in `schema-v9.sql`, both applied. 24h TTL enforced at read-time via `created_at` filter (not physical deletion) in `getCount()`.
 </CONTEXT>
 
@@ -150,12 +150,14 @@ types/index.ts             — Venue, GameSession, Filters, CostType interfaces
 - [x] **Map pins update on venue add/remove/edit (2026-07-14)** — `components/Map.tsx` marker effect now diffs `venues` against `markersRef.current` by `venueId` each run instead of a one-shot `length === 0` guard: adds markers for new venues, removes markers for gone venues, repositions markers whose lat/lng changed.
 - [x] **Unapproved venue sessions filtered server-side (2026-07-14)** — `app/page.tsx`'s `HomePage` now filters `getSessions()` results down to `approvedVenueIds` (derived from `getVenues()`) before anything reaches `HomeClient`, closing the latent full-session-data leak for hidden venues.
 - [x] **Full review + fix pass (2026-07-18)** — audit scored 14/20 (perf down: RSVP N+1). Shipped: batched RSVP GET (one request, 2 queries for all sessions — was ~57 req/~114 queries per visitor), GET rate limit + bounded rate-limit map, lib/data.ts consolidation (deleted dead lib/supabase.ts; embed/venue/home all fetch through it, errors logged instead of swallowed), Lucide weather/empty-state icons (emoji gone; also fixed WeatherChip hiding at 0°C), tokenized One-time/Featured/New chips (+ --indoor-soft/--grass tokens), mobile filter collapse toggle, "I'm going" button relabel, GameCard side-stripe removed. Discovered: featured checkbox ALREADY existed in admin (AdminClient SessionForm + actions.ts) — old "Next up" #2 was stale.
-- [ ] **schema-v10.sql STILL PENDING** — could not verify from CLI (Supabase env vars are sensitive-marked in Vercel; env pull returns empty). Verify in Supabase SQL Editor: `select relrowsecurity from pg_class where relname='newsletter_subscribers';` + `select policyname from pg_policies where tablename='newsletter_subscribers';` — want rowsecurity=true and zero policies; if not, run supabase/schema-v10.sql
+- [x] **schema-v10.sql verified (2026-07-27)** — `newsletter_subscribers` RLS confirmed locked down in Supabase SQL Editor by Nimo.
 - [ ] Optional: set `ADMIN_SESSION_SECRET` in Vercel (falls back to key derived from ADMIN_PASSWORD)
 - [ ] Optional/low-priority: no lockout on repeated failed `/admin/login` attempts
 - [ ] Local `.env.local` has empty Supabase values — pull real ones (`vercel env pull`) to dev against live data
 - [ ] Visual-test mobile drawer/nav/popover on real devices (iPhone SE + notched)
 - [ ] Cherry Beach organized mixed 6s — add when organizer info available
+- [x] **Test suite added (2026-07-20)** — repo had zero tests before this. Vitest set up (`vitest.config.ts` + `npm test`, uses `vite-tsconfig-paths` for the `@/*` alias). 31 tests, 4 files, all passing: `lib/sessions.test.ts` (Toronto TZ/DST logic for isToday/isLiveNow/isStartingSoon/getAllSessionsSorted via `vi.setSystemTime`), `lib/admin-session.test.ts` (HMAC cookie auth roundtrip/tamper/expiry, mocks `next/headers`), `app/api/rsvp/route.test.ts` (rate limiting, UUID validation, batched GET, POST toggle+error paths), `app/api/newsletter/route.test.ts` (validation, normalization, no error-message leakage). Supabase client is mocked with a thenable query-builder stub — no real DB hit.
+- [x] **Session-level share with live going-count (2026-07-27)** — next-up #3 shipped. `RsvpButton.tsx` split into a `useRsvpState(sessionId)` hook (fetch/toggle/cache logic) + the existing button component, so `GameCard` can read the same batched RSVP count without an extra network call. `ShareButton.tsx` gained `text` (prepended to the copied URL) and `compact` (icon-only, fits the existing icon row) props — venue-page usage unchanged. `GameCard` now has `id={session-<id>}` (+ `scroll-mt-16`) for deep-linking and renders a compact share button next to RSVP/calendar that copies `{count} people going to {title} at {venue} — join them: <venue-url>#session-<id>` (falls back to a plain invite when count is 0).
 </STATUS>
 
 <CONTEXT name="next-up">
@@ -165,9 +167,10 @@ Prioritized 2026-07-14 by the product-review agent, grounded in what's actually 
 
 1. **Human actions, highest ROI (2026-07-18 review):** turn on Vercel Analytics dashboard tab; buy a real domain (organizers won't pay to be featured on a vercel.app subdomain); pitch 2-3 organizers a comped featured slot (the admin checkbox already exists — sell before building Stripe).
 2. **Distribution, not code** — refresh the May reddit post, Toronto volleyball FB/Discord groups, ask newsletter subscribers what's missing. Codebase is above the bar for this stage; audience isn't.
-3. Share a session's going-count — `ShareButton.tsx` already exists (clipboard copy) but only on the venue page and doesn't mention who's going. Add a session-level share on `GameCard` including the live count. Direct compounding move on RSVP + avatar stack, hours of work.
-4. "Joined in the last hour" momentum chip — `rsvps.created_at` already supports this with zero schema change, reusing the existing Live/Soon badge pattern.
-5. Opportunistic: unit tests for `lib/sessions.ts` timezone logic (DST-fragile, zero coverage).
+3. "Joined in the last hour" momentum chip — `rsvps.created_at` already supports this with zero schema change, reusing the existing Live/Soon badge pattern.
+
+Done, not deferred:
+- ~~Share a session's going-count~~ — shipped 2026-07-27, see STATUS.
 
 Deferred, with reasons (not just parked):
 - **Featured listings + Stripe** — right idea, wrong sequencing. Validate demand with the manual admin toggle (#3) first; only build checkout once an organizer has actually asked to pay.
