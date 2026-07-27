@@ -6,8 +6,9 @@ import { formatTime, isLiveNow, isStartingSoon } from '@/lib/sessions'
 import { buildCalendarUrls } from '@/lib/calendar'
 import { ExternalLink, CalendarPlus } from 'lucide-react'
 import Link from 'next/link'
-import RsvpButton from './RsvpButton'
+import RsvpButton, { useRsvpState } from './RsvpButton'
 import CostChip from './CostChip'
+import ShareButton from './ShareButton'
 
 interface GameCardProps {
   session: GameSession
@@ -31,6 +32,11 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
 
   const isOneTime = !session.recurring && !!session.specific_date
   const { googleUrl, icsUri } = buildCalendarUrls(session, venue)
+  const { count: rsvpCount } = useRsvpState(session.id)
+  const shareUrl = `https://volleymaps.vercel.app/venues/${venue.slug}#session-${session.id}`
+  const shareText = rsvpCount && rsvpCount > 0
+    ? `${rsvpCount} ${rsvpCount === 1 ? 'person is' : 'people are'} going to ${session.title} at ${venue.name} — join them:`
+    : `Join ${session.title} at ${venue.name}:`
 
   const dateDisplay = session.specific_date
     ? new Date(session.specific_date + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
@@ -53,7 +59,10 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
   }, [calOpen])
 
   return (
-    <div className={`group py-3 border-b border-border last:border-0 transition-opacity ${dimmed ? 'opacity-40' : 'opacity-100'}`}>
+    <div
+      id={`session-${session.id}`}
+      className={`group py-3 border-b border-border last:border-0 scroll-mt-16 transition-opacity ${dimmed ? 'opacity-40' : 'opacity-100'}`}
+    >
       <div className="min-w-0">
         {showVenueName && (
           <Link
@@ -124,6 +133,8 @@ export default function GameCard({ session, venue, showVenueName = true, dimmed 
 
           <div className="flex items-center gap-2 shrink-0">
             <RsvpButton sessionId={session.id} />
+
+            <ShareButton url={shareUrl} text={shareText} compact />
 
             <div className="relative" ref={calRef}>
               <button

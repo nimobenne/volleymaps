@@ -77,7 +77,7 @@ function fetchInitial(sessionId: string): Promise<RsvpState> {
   return p
 }
 
-export default function RsvpButton({ sessionId }: RsvpButtonProps) {
+export function useRsvpState(sessionId: string) {
   const [count, setCount] = useState<number | null>(null)
   const [going, setGoing] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -123,6 +123,12 @@ export default function RsvpButton({ sessionId }: RsvpButtonProps) {
       setLoading(false)
     }
   }
+
+  return { count, going, loading, toggle }
+}
+
+export default function RsvpButton({ sessionId }: RsvpButtonProps) {
+  const { count, going, loading, toggle } = useRsvpState(sessionId)
 
   if (count === null) return null
 
