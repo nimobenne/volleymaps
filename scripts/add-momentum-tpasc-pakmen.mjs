@@ -1,15 +1,9 @@
 // Adds Momentum Volleyball venues + enriches TPASC + Pakmen sessions
 // Usage: node scripts/add-momentum-tpasc-pakmen.mjs <supabase-url> <service-role-key>
 
-import { createClient } from '@supabase/supabase-js'
+import { getSeedClient } from './lib/seed-client.mjs'
 
-const [url, key] = process.argv.slice(2)
-if (!url || !key) {
-  console.error('Usage: node scripts/add-momentum-tpasc-pakmen.mjs <supabase-url> <service-role-key>')
-  process.exit(1)
-}
-
-const supabase = createClient(url, key)
+const supabase = getSeedClient('add-momentum-tpasc-pakmen.mjs')
 
 // --- 1. Add Momentum Volleyball venues ---
 

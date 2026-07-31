@@ -1,15 +1,9 @@
 // Adds Toronto Volleyball Centre (The Hangar) adult league
 // Usage: node scripts/add-tvc.mjs <supabase-url> <service-role-key>
 
-import { createClient } from '@supabase/supabase-js'
+import { getSeedClient } from './lib/seed-client.mjs'
 
-const [url, key] = process.argv.slice(2)
-if (!url || !key) {
-  console.error('Usage: node scripts/add-tvc.mjs <supabase-url> <service-role-key>')
-  process.exit(1)
-}
-
-const supabase = createClient(url, key)
+const supabase = getSeedClient('add-tvc.mjs')
 
 const venue = {
   name: 'Toronto Volleyball Centre — The Hangar',

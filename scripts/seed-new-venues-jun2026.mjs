@@ -1,17 +1,9 @@
-// Usage: node scripts/seed-new-venues-jun2026.mjs
+// Usage: node scripts/seed-new-venues-jun2026.mjs <supabase-url> <service-role-key>
 // Adds 7 new venues found via research (June 2026)
 
-import { createClient } from '@supabase/supabase-js'
+import { getSeedClient } from './lib/seed-client.mjs'
 
-const SUPABASE_URL = 'https://zunbvjdvuehwtaixhrrg.supabase.co'
-const SUPABASE_KEY = process.argv[2] || process.env.SUPABASE_SERVICE_ROLE_KEY
-
-if (!SUPABASE_KEY) {
-  console.error('Usage: node scripts/seed-new-venues-jun2026.mjs <service-role-key>')
-  process.exit(1)
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+const supabase = getSeedClient('seed-new-venues-jun2026.mjs')
 
 const venues = [
   {
