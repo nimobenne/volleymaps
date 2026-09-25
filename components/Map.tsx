@@ -7,21 +7,19 @@ import { Venue, GameSession } from '@/types'
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE } from '@/lib/mapbox'
 import VenuePopover from './VenuePopover'
 import { createPinElement, TYPE_COLORS } from './MapPin'
-import { isLiveNow, isToday } from '@/lib/sessions'
+import { isLiveNow } from '@/lib/sessions'
+import { matchesFilters, type SessionFilters } from '@/lib/filters'
 
 interface MapProps {
   venues: Venue[]
   sessions: GameSession[]
-  typeFilter: 'all' | 'beach' | 'indoor' | 'grass'
-  skillFilter?: 'all' | 'beginner' | 'intermediate' | 'competitive'
-  dayFilter?: 'all' | 'today' | 'weekend'
-  searchQuery?: string
+  filters: SessionFilters
   onPinTap?: () => void
   onGeolocate?: (coords: { lat: number; lng: number }) => void
 }
 
 
-export default function Map({ venues, sessions, typeFilter, skillFilter = 'all', dayFilter = 'all', searchQuery = '', onPinTap, onGeolocate }: MapProps) {
+export default function Map({ venues, sessions, filters, onPinTap, onGeolocate }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<{ marker: maplibregl.Marker; venueId: string; el: HTMLElement }[]>([])
@@ -68,8 +66,6 @@ export default function Map({ venues, sessions, typeFilter, skillFilter = 'all',
     if (!map) return
 
     const updateMarkers = () => {
-      const q = searchQuery.toLowerCase()
-
       // Diff venues against existing markers — add new, remove gone,
       // reposition moved. Previously this only ran once (guarded by
       // markersRef.current.length === 0), so venues added/removed/edited
@@ -116,22 +112,8 @@ export default function Map({ venues, sessions, typeFilter, skillFilter = 'all',
         if (!venue) return
 
         const venueSessions = sessions.filter(s => s.venue_id === venueId)
-        const visibleSessions = venueSessions.filter(s => {
-          if (typeFilter !== 'all' && venue.type !== typeFilter) return false
-          if (dayFilter === 'today' && !isToday(s)) return false
-          if (dayFilter === 'weekend' && s.day_of_week !== 0 && s.day_of_week !== 6) return false
-          if (skillFilter !== 'all' && s.skill_level !== 'all' && s.skill_level !== skillFilter) return false
-          return true
-        })
-
-        const searchMatch = !q
-          || venue.name.toLowerCase().includes(q)
-          || venue.address.toLowerCase().includes(q)
-          || venueSessions.some(s => s.title.toLowerCase().includes(q) || (s.notes ?? '').toLowerCase().includes(q))
-        const filterMatch = typeFilter === 'all'
-          ? visibleSessions.length > 0
-          : venue.type === typeFilter && visibleSessions.length > 0
-        el.style.opacity = searchMatch && filterMatch ? '1' : '0.15'
+        const visibleSessions = venueSessions.filter(s => matchesFilters(s, venue, filters))
+        el.style.opacity = visibleSessions.length > 0 ? '1' : '0.15'
 
         const hasLive = venueSessions.some(s => isLiveNow(s))
         const pulseEl = el.querySelector('.live-pulse') as HTMLElement | null
@@ -141,7 +123,7 @@ export default function Map({ venues, sessions, typeFilter, skillFilter = 'all',
 
     if (map.loaded()) updateMarkers()
     else map.once('load', updateMarkers)
-  }, [venues, sessions, typeFilter, skillFilter, dayFilter, searchQuery])
+  }, [venues, sessions, filters])
 
   return (
     <div className="relative w-full h-full">

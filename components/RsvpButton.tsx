@@ -22,7 +22,7 @@ function getToken(): string {
 
 interface RsvpState { count: number; going: boolean }
 
-// Every rendered GameCard mounts one of these buttons (feed renders the whole
+// Every rendered SessionRow mounts one of these buttons (feed renders the whole
 // week, and LiveFeed is mounted twice: desktop aside + mobile drawer). Instead
 // of one GET per button, mounts within the same commit enqueue their sessionId
 // and a microtask flushes a single batched GET for all of them. Results are

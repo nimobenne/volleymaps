@@ -1,6 +1,6 @@
 import { Venue, GameSession } from '@/types'
 import { notFound } from 'next/navigation'
-import GameCard from '@/components/GameCard'
+import SessionRow from '@/components/SessionRow'
 import ShareButton from '@/components/ShareButton'
 import { MapPin, ExternalLink, ArrowLeft, Waves, Trees, Building2, Navigation } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
@@ -137,7 +137,7 @@ export default async function VenuePage({ params }: PageProps) {
         href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${venue.address}, ${venue.city || 'Toronto'}, ON`)}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-1 mb-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
+        className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-1 mb-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
       >
         <Navigation className="h-3 w-3" /> Get directions
       </a>
@@ -147,7 +147,7 @@ export default async function VenuePage({ params }: PageProps) {
           href={venue.website}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-3 mb-2"
+          className="flex w-fit items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-3 mb-2"
         >
           Visit website <ExternalLink className="h-3.5 w-3.5" />
         </a>
@@ -165,7 +165,7 @@ export default async function VenuePage({ params }: PageProps) {
               <div key={day}>
                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">{day}</h3>
                 {daySessions.map(s => (
-                  <GameCard key={s.id} session={s} venue={venue} showVenueName={false} />
+                  <SessionRow key={s.id} session={s} venue={venue} showVenueName={false} />
                 ))}
               </div>
             ))}
@@ -179,7 +179,7 @@ export default async function VenuePage({ params }: PageProps) {
           <section>
             <h2 className="font-display font-bold text-xl uppercase tracking-wide mb-5">Upcoming One-Offs</h2>
             {oneOffs.map(s => (
-              <GameCard key={s.id} session={s} venue={venue} showVenueName={false} />
+              <SessionRow key={s.id} session={s} venue={venue} showVenueName={false} />
             ))}
           </section>
         </>

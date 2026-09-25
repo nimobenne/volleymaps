@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useSyncExternalStore } from 'react'
-import { Venue, GameSession, TypeFilter, SkillFilter, DayFilter } from '@/types'
+import { Venue, GameSession } from '@/types'
 import { getAllSessionsSorted, isLiveNow, isStartingSoon } from '@/lib/sessions'
-import GameCard from './GameCard'
+import { filterSessions, type SessionFilters } from '@/lib/filters'
+import SessionRow from './SessionRow'
 import { Skeleton } from '@/components/ui/skeleton'
 import { MapPin, Volleyball } from 'lucide-react'
 
@@ -12,10 +13,7 @@ const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 interface LiveFeedProps {
   venues: Venue[]
   sessions: GameSession[]
-  typeFilter: TypeFilter
-  skillFilter?: SkillFilter
-  dayFilter?: DayFilter
-  searchQuery?: string
+  filters: SessionFilters
   userCoords?: { lat: number; lng: number } | null
   onClearFilters?: () => void
 }
@@ -28,38 +26,19 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): num
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-function isWeekendDay(dayOfWeek?: number): boolean {
-  return dayOfWeek === 0 || dayOfWeek === 6
-}
-
 // "Today" depends on client time — render skeletons until hydrated to avoid mismatch
 const emptySubscribe = () => () => {}
 function useMounted() {
   return useSyncExternalStore(emptySubscribe, () => true, () => false)
 }
 
-export default function LiveFeed({
-  venues, sessions, typeFilter, skillFilter = 'all', dayFilter = 'all', searchQuery = '', userCoords, onClearFilters,
-}: LiveFeedProps) {
+export default function LiveFeed({ venues, sessions, filters, userCoords, onClearFilters }: LiveFeedProps) {
   const mounted = useMounted()
   const [sortByDistance, setSortByDistance] = useState(false)
 
   const venueMap = Object.fromEntries(venues.map(v => [v.id, v]))
 
-  const q = searchQuery.toLowerCase()
-  const filtered = sessions.filter(s => {
-    const venue = venueMap[s.venue_id]
-    if (!venue) return false
-    if (typeFilter !== 'all' && venue.type !== typeFilter) return false
-    if (skillFilter !== 'all' && s.skill_level !== 'all' && s.skill_level !== skillFilter) return false
-    if (dayFilter === 'weekend' && !isWeekendDay(s.day_of_week)) return false
-    if (q) {
-      const inVenue = venue.name.toLowerCase().includes(q) || venue.address.toLowerCase().includes(q)
-      const inSession = s.title.toLowerCase().includes(q) || (s.notes ?? '').toLowerCase().includes(q)
-      if (!inVenue && !inSession) return false
-    }
-    return true
-  })
+  const filtered = filterSessions(sessions, venueMap, filters)
 
   const venueDist = (s: GameSession) => {
     const v = venueMap[s.venue_id]
@@ -163,7 +142,7 @@ export default function LiveFeed({
               ? todaySorted.map(session => {
                   const venue = venueMap[session.venue_id]
                   if (!venue) return null
-                  return <GameCard key={session.id} session={session} venue={venue} showVenueName />
+                  return <SessionRow key={session.id} session={session} venue={venue} showVenueName />
                 })
               : <p className="text-xs text-muted-foreground py-4">No games today. Check back or browse the week below.</p>
             }
@@ -177,7 +156,7 @@ export default function LiveFeed({
                   {upcomingSorted.map(session => {
                     const venue = venueMap[session.venue_id]
                     if (!venue) return null
-                    return <GameCard key={session.id} session={session} venue={venue} showVenueName dimmed />
+                    return <SessionRow key={session.id} session={session} venue={venue} showVenueName dimmed />
                   })}
                 </div>
               )
@@ -192,7 +171,7 @@ export default function LiveFeed({
                       {daySessions.map(session => {
                         const venue = venueMap[session.venue_id]
                         if (!venue) return null
-                        return <GameCard key={session.id} session={session} venue={venue} showVenueName dimmed />
+                        return <SessionRow key={session.id} session={session} venue={venue} showVenueName dimmed />
                       })}
                     </div>
                   ))}

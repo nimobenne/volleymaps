@@ -2,10 +2,7 @@
 
 import { useState } from 'react'
 import { Waves, Trees, Building2, SlidersHorizontal, LucideIcon } from 'lucide-react'
-
-type TypeFilter = 'all' | 'beach' | 'indoor' | 'grass'
-type SkillFilter = 'all' | 'beginner' | 'intermediate' | 'competitive'
-export type DayFilter = 'all' | 'today' | 'weekend'
+import type { TypeFilter, SkillFilter, DayFilter, CostFilter } from '@/types'
 
 interface FiltersProps {
   typeFilter: TypeFilter
@@ -14,6 +11,8 @@ interface FiltersProps {
   onSkillChange: (skill: SkillFilter) => void
   dayFilter: DayFilter
   onDayChange: (v: DayFilter) => void
+  costFilter: CostFilter
+  onCostChange: (v: CostFilter) => void
 }
 
 const TYPE_OPTIONS: { value: TypeFilter; label: string; Icon: LucideIcon }[] = [
@@ -34,6 +33,12 @@ const SKILL_OPTIONS: { value: SkillFilter; label: string }[] = [
   { value: 'beginner',     label: 'Beginner' },
   { value: 'intermediate', label: 'Intermediate' },
   { value: 'competitive',  label: 'Competitive' },
+]
+
+const COST_OPTIONS: { value: CostFilter; label: string }[] = [
+  { value: 'all',  label: 'Any cost' },
+  { value: 'free', label: 'Free' },
+  { value: 'paid', label: 'Paid' },
 ]
 
 const activeCls = 'bg-primary text-primary-foreground shadow-sm'
@@ -66,11 +71,15 @@ function PillRow<T extends string>({ options, active, onSelect, pillSize = 'md' 
   )
 }
 
-export default function Filters({ typeFilter, onTypeChange, skillFilter, onSkillChange, dayFilter, onDayChange }: FiltersProps) {
-  // On mobile the day + skill rows hide behind one toggle so the map isn't
-  // buried under three rows of pills. Desktop always shows everything.
+export default function Filters({
+  typeFilter, onTypeChange, skillFilter, onSkillChange,
+  dayFilter, onDayChange, costFilter, onCostChange,
+}: FiltersProps) {
+  // On mobile the day + cost + skill rows hide behind one toggle so the map
+  // isn't buried under three rows of pills. Desktop always shows everything.
   const [moreOpen, setMoreOpen] = useState(false)
-  const refinementCount = (dayFilter !== 'all' ? 1 : 0) + (skillFilter !== 'all' ? 1 : 0)
+  const refinementCount =
+    (dayFilter !== 'all' ? 1 : 0) + (skillFilter !== 'all' ? 1 : 0) + (costFilter !== 'all' ? 1 : 0)
 
   return (
     <div className="flex flex-col items-center gap-1.5">
@@ -79,7 +88,7 @@ export default function Filters({ typeFilter, onTypeChange, skillFilter, onSkill
         <button
           onClick={() => setMoreOpen(o => !o)}
           aria-expanded={moreOpen}
-          aria-label={`${moreOpen ? 'Hide' : 'Show'} day and skill filters${refinementCount > 0 ? `, ${refinementCount} active` : ''}`}
+          aria-label={`${moreOpen ? 'Hide' : 'Show'} day, cost and skill filters${refinementCount > 0 ? `, ${refinementCount} active` : ''}`}
           className={`md:hidden relative flex items-center justify-center rounded-full border min-h-[36px] min-w-[36px] shadow-lg shadow-black/30 transition-all duration-150 ${
             moreOpen || refinementCount > 0 ? activeCls + ' border-transparent' : inactiveCls
           }`}
@@ -95,6 +104,8 @@ export default function Filters({ typeFilter, onTypeChange, skillFilter, onSkill
       <div className={`${moreOpen ? 'block' : 'hidden'} md:block w-full overflow-x-auto`}>
         <div className="flex items-center gap-1.5 w-max mx-auto">
           <PillRow options={DAY_OPTIONS} active={dayFilter} onSelect={onDayChange} pillSize="sm" />
+          <div className="w-px h-5 bg-border shrink-0" />
+          <PillRow options={COST_OPTIONS} active={costFilter} onSelect={onCostChange} pillSize="sm" />
           <div className="w-px h-5 bg-border shrink-0" />
           <PillRow options={SKILL_OPTIONS} active={skillFilter} onSelect={onSkillChange} pillSize="sm" />
         </div>

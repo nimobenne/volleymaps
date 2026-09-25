@@ -4,7 +4,7 @@ import { Venue, GameSession } from '@/types'
 import { X, MapPin, ExternalLink, ArrowRight, Navigation } from 'lucide-react'
 import { getTodaysSessions } from '@/lib/sessions'
 import { isNewVenue, getVenueColor, getVenueLabel } from '@/lib/utils'
-import GameCard from './GameCard'
+import SessionRow from './SessionRow'
 import WeatherChip from './WeatherChip'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -94,7 +94,7 @@ export default function VenuePopover({ venue, sessions, onClose }: VenuePopoverP
           <div className="mb-3">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Today</p>
             {todaysSessions.slice(0, 2).map(s => (
-              <GameCard key={s.id} session={s} venue={venue} showVenueName={false} />
+              <SessionRow key={s.id} session={s} venue={venue} showVenueName={false} />
             ))}
           </div>
         ) : (

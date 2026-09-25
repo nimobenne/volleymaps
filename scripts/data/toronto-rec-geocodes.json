@@ -1,0 +1,266 @@
+{
+ "13": {
+  "name": "Adam Beck Community Centre",
+  "address": "79 Lawlor Ave",
+  "lat": 43.68285,
+  "lng": -79.28885
+ },
+ "39": {
+  "name": "Frankland Community Centre",
+  "address": "816 Logan Ave",
+  "lat": 43.677013,
+  "lng": -79.350681
+ },
+ "42": {
+  "name": "Antibes Community Centre",
+  "address": "140 Antibes Dr",
+  "lat": 43.781186,
+  "lng": -79.446994
+ },
+ "58": {
+  "name": "Jimmie Simpson Recreation Centre",
+  "address": "870 Queen St E",
+  "lat": 43.660407,
+  "lng": -79.345308
+ },
+ "100": {
+  "name": "Mary McCormick Recreation Centre",
+  "address": "66 Sheridan Ave",
+  "lat": 43.647462,
+  "lng": -79.433163
+ },
+ "171": {
+  "name": "Earl Bales Community Centre",
+  "address": "4169 Bathurst St",
+  "lat": 43.753497,
+  "lng": -79.437808
+ },
+ "189": {
+  "name": "North Toronto Memorial Community Centre",
+  "address": "200 Eglinton Ave W",
+  "lat": 43.705914,
+  "lng": -79.405121
+ },
+ "234": {
+  "name": "Matty Eckler Recreation Centre",
+  "address": "953 Gerrard St E",
+  "lat": 43.667894,
+  "lng": -79.339786
+ },
+ "243": {
+  "name": "Parkdale Community Recreation Centre",
+  "address": "75 Lansdowne Ave.",
+  "lat": 43.643641,
+  "lng": -79.437361
+ },
+ "272": {
+  "name": "St. Lawrence Community Recreation Centre",
+  "address": "230 The Esplanade",
+  "lat": 43.649686,
+  "lng": -79.364888
+ },
+ "282": {
+  "name": "Swansea Community Recreation Centre",
+  "address": "15 Waller Ave",
+  "lat": 43.643953,
+  "lng": -79.476786
+ },
+ "287": {
+  "name": "Trinity Community Recreation Centre",
+  "address": "155 Crawford St",
+  "lat": 43.646245,
+  "lng": -79.414901
+ },
+ "294": {
+  "name": "Wallace Emerson Community Recreation Centre",
+  "address": "1260 Dufferin St",
+  "lat": 43.66747,
+  "lng": -79.439134
+ },
+ "350": {
+  "name": "Carmine Stefano Community Centre",
+  "address": "3100 Weston Rd",
+  "lat": 43.73376,
+  "lng": -79.538408
+ },
+ "354": {
+  "name": "Thistletown Multi-Service Centre",
+  "address": "925 Albion Rd",
+  "lat": 43.73545,
+  "lng": -79.562527
+ },
+ "451": {
+  "name": "Wellesley Community Centre",
+  "address": "495 Sherbourne St",
+  "lat": 43.667692,
+  "lng": -79.374526
+ },
+ "472": {
+  "name": "Amesbury Community Centre",
+  "address": "1507 Lawrence Ave W",
+  "lat": 43.707394,
+  "lng": -79.482429
+ },
+ "507": {
+  "name": "Birchmount Community Centre",
+  "address": "93 Birchmount Rd",
+  "lat": 43.69542,
+  "lng": -79.26233
+ },
+ "575": {
+  "name": "Driftwood Community Recreation Centre",
+  "address": "4401 Jane St",
+  "lat": 43.765427,
+  "lng": -79.518764
+ },
+ "617": {
+  "name": "Ellesmere Community Recreation Centre",
+  "address": "20 Canadian Rd",
+  "lat": 43.76077,
+  "lng": -79.29906
+ },
+ "675": {
+  "name": "Lawrence Heights Community Centre",
+  "address": "5 Replin Rd",
+  "lat": 43.71804,
+  "lng": -79.442243
+ },
+ "693": {
+  "name": "Mitchell Field Community Centre",
+  "address": "89 Church Ave",
+  "lat": 43.774552,
+  "lng": -79.408346
+ },
+ "702": {
+  "name": "Malvern Recreation Centre",
+  "address": "30 Sewells Rd",
+  "lat": 43.808567,
+  "lng": -79.216122
+ },
+ "703": {
+  "name": "Northwood Community Centre",
+  "address": "15 Clubhouse Crt",
+  "lat": 43.745577,
+  "lng": -79.500162
+ },
+ "712": {
+  "name": "Don Montgomery Community Recreation Centre",
+  "address": "2467 Eglinton Ave E",
+  "lat": 43.732658,
+  "lng": -79.261697
+ },
+ "714": {
+  "name": "Oriole Community Recreation Centre",
+  "address": "2975 Don Mills Rd. W",
+  "lat": 43.781771,
+  "lng": -79.351372
+ },
+ "749": {
+  "name": "North Kipling Community Centre",
+  "address": "2 Rowntree Rd",
+  "lat": 43.752617,
+  "lng": -79.584728
+ },
+ "751": {
+  "name": "Seneca Village Community Centre",
+  "address": "1700 Finch Ave E",
+  "lat": 43.794002,
+  "lng": -79.351309
+ },
+ "755": {
+  "name": "Humberwood Community Centre",
+  "address": "850 Humberwood Blvd",
+  "lat": 43.730462,
+  "lng": -79.619532
+ },
+ "788": {
+  "name": "L'Amoreaux Community Recreation Centre",
+  "address": "2000 Mcnicoll Ave",
+  "lat": 43.8122,
+  "lng": -79.30222
+ },
+ "1063": {
+  "name": "Falstaff Community Recreation Centre",
+  "address": "50 Falstaff Ave",
+  "lat": 43.716632,
+  "lng": -79.503829
+ },
+ "1076": {
+  "name": "Jenner Jean-Marie Community Recreation Centre",
+  "address": "48 Thorncliffe Park Dr",
+  "lat": 43.703254,
+  "lng": -79.343045
+ },
+ "1237": {
+  "name": "John G. Althouse Community School",
+  "address": "130 Lloyd Manor Rd",
+  "lat": 43.667903,
+  "lng": -79.554403
+ },
+ "1463": {
+  "name": "Edithvale Community Centre",
+  "address": "131 Finch Ave W",
+  "lat": 43.77699,
+  "lng": -79.42654
+ },
+ "1865": {
+  "name": "Warden Hilltop Community Centre",
+  "address": "25 Mendelssohn St",
+  "lat": 43.714686,
+  "lng": -79.280288
+ },
+ "2773": {
+  "name": "Toronto Pan Am Sports Centre",
+  "address": "875 Morningside Ave",
+  "lat": 43.790776,
+  "lng": -79.193691
+ },
+ "2791": {
+  "name": "Parkway Forest Community Centre",
+  "address": "55 Forest Manor Rd",
+  "lat": 43.77254,
+  "lng": -79.34389
+ },
+ "3501": {
+  "name": "York Recreation Centre",
+  "address": "115 Black Creek Dr",
+  "lat": 43.68784,
+  "lng": -79.48201
+ },
+ "3502": {
+  "name": "Regent Park Community Centre",
+  "address": "402 Shuter St",
+  "lat": 43.658125,
+  "lng": -79.361744
+ },
+ "3643": {
+  "name": "Canoe Landing Community Recreation Centre",
+  "address": "45 Fort York Blvd.",
+  "lat": 43.63984,
+  "lng": -79.39465
+ },
+ "3732": {
+  "name": "One Yonge Community Recreation Centre",
+  "address": "24 Freeland St.",
+  "lat": 43.643566,
+  "lng": -79.3738
+ },
+ "3775": {
+  "name": "Ethennonnhawahstihnen' Community Recreation Centre and Library",
+  "address": "100 Ethennonnhawahstihnen' Ln.",
+  "lat": 43.76872,
+  "lng": -79.3758
+ },
+ "3857": {
+  "name": "East Bayfront Community Recreation Centre",
+  "address": "261 Queens Quay E",
+  "lat": 43.64634,
+  "lng": -79.36129
+ },
+ "3858": {
+  "name": "Rouge Valley Community Recreation Centre",
+  "address": "8450 Sheppard Ave East",
+  "lat": 43.80516,
+  "lng": -79.18983
+ }
+}

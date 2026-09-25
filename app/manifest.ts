@@ -11,14 +11,22 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#d97706',
     icons: [
       {
-        src: '/icon',
-        sizes: '32x32',
+        src: '/icon.png',
+        sizes: '256x256',
         type: 'image/png',
       },
       {
-        src: '/apple-icon',
+        src: '/apple-icon.png',
         sizes: '180x180',
         type: 'image/png',
+      },
+      {
+        // Square and opaque, so Android can mask it to any shape without
+        // clipping the ball.
+        src: '/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
       },
     ],
   }

@@ -60,3 +60,6 @@ export interface Filters {
 export type TypeFilter = 'all' | VenueType
 export type DayFilter = 'all' | 'today' | 'weekend'
 export type SkillFilter = 'all' | SkillLevel
+// Only the two costs a player can act on. `unknown` is a data gap and
+// `registration` is resolved to free or paid at ingest, so neither is offered.
+export type CostFilter = 'all' | 'free' | 'paid'

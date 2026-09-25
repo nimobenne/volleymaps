@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { Venue, GameSession, TypeFilter, SkillFilter, DayFilter } from '@/types'
+import { Venue, GameSession, TypeFilter, SkillFilter, DayFilter, CostFilter } from '@/types'
 import { getTodaysSessions } from '@/lib/sessions'
+import { matchesFilters, type SessionFilters } from '@/lib/filters'
 import Filters from './Filters'
 import LiveFeed from './LiveFeed'
 import SearchBar from './SearchBar'
@@ -20,6 +21,7 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [skillFilter, setSkillFilter] = useState<SkillFilter>('all')
   const [dayFilter, setDayFilter] = useState<DayFilter>('all')
+  const [costFilter, setCostFilter] = useState<CostFilter>('all')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -37,12 +39,15 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
 
   const venueMap = Object.fromEntries(venues.map(v => [v.id, v]))
 
-  function sessionMatches(s: GameSession) {
-    const venue = venueMap[s.venue_id]
-    if (!venue) return false
-    if (typeFilter !== 'all' && venue.type !== typeFilter) return false
-    if (skillFilter !== 'all' && s.skill_level !== 'all' && s.skill_level !== skillFilter) return false
-    return true
+  const filters: SessionFilters = {
+    type: typeFilter, skill: skillFilter, day: dayFilter, cost: costFilter, query: searchQuery,
+  }
+  // Counts run through the same predicate the feed does, so the drawer header
+  // can no longer advertise games the list underneath it is filtering out.
+  const sessionMatches = (s: GameSession) => matchesFilters(s, venueMap[s.venue_id], filters)
+
+  function clearFilters() {
+    setTypeFilter('all'); setSkillFilter('all'); setDayFilter('all'); setCostFilter('all'); setSearchQuery('')
   }
 
   const todayCount = getTodaysSessions(sessions).filter(sessionMatches).length
@@ -78,16 +83,15 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
             onSkillChange={setSkillFilter}
             dayFilter={dayFilter}
             onDayChange={setDayFilter}
+            costFilter={costFilter}
+            onCostChange={setCostFilter}
           />
         </div>
 
         <Map
           venues={venues}
           sessions={sessions}
-          typeFilter={typeFilter}
-          skillFilter={skillFilter}
-          dayFilter={dayFilter}
-          searchQuery={searchQuery}
+          filters={filters}
           onPinTap={() => setDrawerOpen(false)}
           onGeolocate={setUserCoords}
         />
@@ -97,12 +101,9 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
         <LiveFeed
           venues={venues}
           sessions={sessions}
-          typeFilter={typeFilter}
-          skillFilter={skillFilter}
-          dayFilter={dayFilter}
-          searchQuery={searchQuery}
+          filters={filters}
           userCoords={userCoords}
-          onClearFilters={() => { setTypeFilter('all'); setSkillFilter('all'); setDayFilter('all'); setSearchQuery('') }}
+          onClearFilters={clearFilters}
         />
       </aside>
 
@@ -148,12 +149,9 @@ export default function HomeClient({ venues, sessions }: HomeClientProps) {
           <LiveFeed
             venues={venues}
             sessions={sessions}
-            typeFilter={typeFilter}
-            skillFilter={skillFilter}
-            dayFilter={dayFilter}
-            searchQuery={searchQuery}
+            filters={filters}
             userCoords={userCoords}
-            onClearFilters={() => { setTypeFilter('all'); setSkillFilter('all'); setDayFilter('all'); setSearchQuery('') }}
+            onClearFilters={clearFilters}
           />
         </div>
       </div>
