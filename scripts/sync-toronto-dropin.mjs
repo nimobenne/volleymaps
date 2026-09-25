@@ -149,6 +149,12 @@ function buildSessionRow(g, venueId) {
     cost_type: 'free',
     cost_label: needsBooking ? 'Free · book' : null,
     featured: false,
+    // The city only publishes ~6 weeks out, so every imported session carries
+    // the window it was published for. If this script is not re-run in time the
+    // sessions retire themselves instead of advertising a schedule that has
+    // already finished. Requires supabase/schema-v11.sql.
+    season_start: oneOff ? null : g.first,
+    season_end: oneOff ? null : g.last,
   }
 }
 

@@ -34,6 +34,8 @@ export interface GameSession {
   cost_type?: CostType
   cost_cents?: number | null
   cost_label?: string | null
+  season_start?: string | null // YYYY-MM-DD; null = runs year-round
+  season_end?: string | null   // YYYY-MM-DD; null = runs year-round. Past = hidden from public reads
 }
 
 export interface Submission {

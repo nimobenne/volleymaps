@@ -16,6 +16,24 @@ function getClient() {
   )
 }
 
+// Today in Toronto, not in UTC. A session that ends on the 30th has to stay
+// visible all of the 30th local time, and the server runs in UTC.
+export function torontoToday(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date())
+}
+
+// A session with no season_end runs year-round. One whose season has passed is
+// dropped here rather than in the UI, so a finished season cannot leak into the
+// feed, the map, the venue page, the embed or the sitemap by way of some caller
+// that forgot to check. Seasons used to live in `notes` as prose, which meant
+// nothing could filter on them and U of T kept advertising spring sessions into
+// September.
+export function isInSeason(session: GameSession, today = torontoToday()): boolean {
+  return !session.season_end || session.season_end >= today
+}
+
 export async function getVenues(): Promise<Venue[]> {
   if (USE_MOCK) return MOCK_VENUES
   const { data, error } = await getClient()
@@ -34,7 +52,7 @@ export async function getSessions(): Promise<GameSession[]> {
     .select('*')
     .order('start_time')
   if (error) console.error('[data] getSessions error:', error.message)
-  return (data ?? []) as GameSession[]
+  return ((data ?? []) as GameSession[]).filter(sess => isInSeason(sess))
 }
 
 // Homepage data: venues plus only the sessions belonging to an approved
@@ -67,5 +85,5 @@ export async function getVenueSessions(venueId: string): Promise<GameSession[]> 
     .order('day_of_week')
     .order('start_time')
   if (error) console.error('[data] getVenueSessions error:', error.message)
-  return (data ?? []) as GameSession[]
+  return ((data ?? []) as GameSession[]).filter(sess => isInSeason(sess))
 }
