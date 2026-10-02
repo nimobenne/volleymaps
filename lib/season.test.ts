@@ -26,6 +26,12 @@ describe('isInSeason', () => {
     expect(isInSeason(session({ season_end: '2026-09-30' }), '2026-09-30')).toBe(true)
   })
 
+  it('drops a session whose season has not started, keeps it from its first day', () => {
+    expect(isInSeason(session({ season_start: '2026-10-01' }), '2026-09-30')).toBe(false)
+    expect(isInSeason(session({ season_start: '2026-10-01' }), '2026-10-01')).toBe(true)
+    expect(isInSeason(session({ season_start: '2026-10-01', season_end: '2026-12-01' }), '2026-11-01')).toBe(true)
+  })
+
   it('drops a session the day after its season ends', () => {
     expect(isInSeason(session({ season_end: '2026-09-30' }), '2026-10-01')).toBe(false)
   })

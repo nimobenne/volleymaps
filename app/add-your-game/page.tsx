@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
+import { safeHttpUrl } from '@/lib/safe-url'
 
 export default function AddYourGamePage() {
   const [submitted, setSubmitted] = useState(false)
@@ -32,11 +33,6 @@ export default function AddYourGamePage() {
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRe.test(email)) { setError('Please enter a valid email address.'); setLoading(false); return }
 
-    const safeUrl = (raw: string) => {
-      if (!raw) return null
-      try { new URL(raw); return raw } catch { return null }
-    }
-
     try {
       const { createClient } = await import('@supabase/supabase-js')
       const supabase = createClient(
@@ -45,8 +41,8 @@ export default function AddYourGamePage() {
       )
       const { error } = await supabase.from('submissions').insert({
         name, email, venue_name, address, city, type, schedule,
-        website:      safeUrl(websiteRaw),
-        contact_link: safeUrl(contactRaw),
+        website:      safeHttpUrl(websiteRaw),
+        contact_link: safeHttpUrl(contactRaw),
         status:       'pending',
       })
       if (error) throw error

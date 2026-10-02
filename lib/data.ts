@@ -29,8 +29,10 @@ export function torontoToday(): string {
 // feed, the map, the venue page, the embed or the sitemap by way of some caller
 // that forgot to check. Seasons used to live in `notes` as prose, which meant
 // nothing could filter on them and U of T kept advertising spring sessions into
-// September.
+// September. A session not yet started (season_start in the future) is dropped
+// the same way.
 export function isInSeason(session: GameSession, today = torontoToday()): boolean {
+  if (session.season_start && session.season_start > today) return false
   return !session.season_end || session.season_end >= today
 }
 

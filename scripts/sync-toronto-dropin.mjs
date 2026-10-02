@@ -272,17 +272,27 @@ console.log(`✓ ${toInsert.length} venues added, ${toUpdate.length} updated`)
 
 const venueIdBySlug = idBySlug
 
-// Clear only this script's own sessions, so a re-run replaces a stale schedule
-// instead of stacking a second copy on top of it.
+// Replace only this script's own sessions, so a re-run swaps a stale schedule
+// instead of stacking a second copy on top of it. Insert first, delete the old
+// ids after: a failed insert leaves the previous schedule intact rather than
+// leaving these venues empty.
 const cityVenueIds = venues.map(v => venueIdBySlug[v.slug])
-const { error: clearError } = await supabase.from('game_sessions').delete().in('venue_id', cityVenueIds)
-if (clearError) { console.error('✗ Clearing old sessions:', clearError.message); process.exit(1) }
+const { data: oldRows, error: oldError } = await supabase
+  .from('game_sessions').select('id').in('venue_id', cityVenueIds)
+if (oldError) { console.error('✗ Reading old sessions:', oldError.message); process.exit(1) }
 
 const sessionRows = weekly.map(g => {
   const venue = venues.find(v => v.locationId === g.locationId)
   return buildSessionRow(g, venueIdBySlug[venue.slug])
 })
 const { error: sessionError } = await supabase.from('game_sessions').insert(sessionRows)
-if (sessionError) { console.error('✗ Sessions:', sessionError.message); process.exit(1) }
+if (sessionError) { console.error('✗ Sessions (old schedule left in place):', sessionError.message); process.exit(1) }
 console.log(`✓ ${sessionRows.length} sessions inserted`)
+
+const oldIds = oldRows.map(r => r.id)
+if (oldIds.length) {
+  const { error: clearError } = await supabase.from('game_sessions').delete().in('id', oldIds)
+  if (clearError) { console.error('✗ New sessions are in, but clearing the old ones failed (duplicates until re-run):', clearError.message); process.exit(1) }
+  console.log(`✓ ${oldIds.length} old sessions removed`)
+}
 console.log('\n✓ Sync complete.')

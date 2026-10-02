@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { safeHttpUrl } from '@/lib/safe-url'
 import { createAdminSession, destroyAdminSession, isAdminAuthenticated, safeEqual } from '@/lib/admin-session'
 
 function toSlug(name: string) {
@@ -47,7 +48,7 @@ export async function approveSubmission(formData: FormData) {
   const type = formData.get('type') as string
   const lat = parseFloat(formData.get('lat') as string)
   const lng = parseFloat(formData.get('lng') as string)
-  const website = (formData.get('website') as string) || null
+  const website = safeHttpUrl(formData.get('website') as string)
   const slugInput = (formData.get('slug') as string) || toSlug(name)
 
   if (isNaN(lat) || isNaN(lng)) return { error: 'Lat/Lng must be valid numbers' }
@@ -82,7 +83,7 @@ export async function updateVenue(formData: FormData) {
   const type = formData.get('type') as string
   const lat = parseFloat(formData.get('lat') as string)
   const lng = parseFloat(formData.get('lng') as string)
-  const website = (formData.get('website') as string) || null
+  const website = safeHttpUrl(formData.get('website') as string)
   const slugInput = (formData.get('slug') as string) || toSlug(name)
 
   if (isNaN(lat) || isNaN(lng)) return { error: 'Lat/Lng must be valid numbers' }
@@ -112,7 +113,7 @@ function sessionFields(formData: FormData) {
     end_time: formData.get('end_time'),
     skill_level: (formData.get('skill_level') as string) || 'all',
     notes: (formData.get('notes') as string) || null,
-    contact_link: (formData.get('contact_link') as string) || null,
+    contact_link: safeHttpUrl(formData.get('contact_link') as string),
     cost_type: (formData.get('cost_type') as string) || 'unknown',
     cost_label: (formData.get('cost_label') as string) || null,
     featured: formData.get('featured') === 'on',
@@ -171,7 +172,7 @@ export async function addVenue(formData: FormData) {
   const type = formData.get('type') as string
   const lat = parseFloat(formData.get('lat') as string)
   const lng = parseFloat(formData.get('lng') as string)
-  const website = (formData.get('website') as string) || null
+  const website = safeHttpUrl(formData.get('website') as string)
   const slugInput = (formData.get('slug') as string) || toSlug(name)
 
   if (isNaN(lat) || isNaN(lng)) return { error: 'Lat/Lng must be valid numbers' }
@@ -195,7 +196,7 @@ export async function addVenue(formData: FormData) {
       end_time: formData.get('end_time'),
       skill_level: formData.get('skill_level') || 'all',
       notes: (formData.get('notes') as string) || null,
-      contact_link: (formData.get('contact_link') as string) || null,
+      contact_link: safeHttpUrl(formData.get('contact_link') as string),
       recurring: true,
     })
     if (sessionError) return { error: sessionError.message }
