@@ -72,6 +72,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Use</Link>
           <span className="text-border">·</span>
           <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+          <span className="text-border">·</span>
+          <a href="https://github.com/nimobenne/volleymaps" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Source on GitHub</a>
         </footer>
 
         <Analytics />
