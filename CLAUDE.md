@@ -122,7 +122,7 @@ types/index.ts             — Venue, GameSession, Filters, CostType, CostFilter
 <STATUS>
 ## Current status
 
-The production database is Neon. Public pages use mock data when `DATABASE_URL` is unset. Failed public queries show a Court Lights error state on the homepage and venue pages; embeds return a service-unavailable response. Admin login and newsletter signup use in-memory per-IP rate limits. GitHub Actions runs lint, tests, and build on Node 24.
+Public repo `nimobenne/volleymaps` (fresh history since 2026-11-24; old private history archived as `nimobenne/volleymaps-archive`). Never commit secrets or personal data, and name the operator only as "Nimo Benne". The production database is Neon. Public pages use mock data when `DATABASE_URL` is unset. Failed public queries show a Court Lights error state on the homepage and venue pages; embeds return a service-unavailable response. Admin login and newsletter signup use in-memory per-IP rate limits. GitHub Actions runs lint, tests, and build on Node 24.
 
 Open:
 - [ ] **Three venue rows for 75 Carl Hall Rd** — `toronto-volleyball-centre`, `momentum-tvc-downsview` (empty), `tvc-the-hangar`. Three stacked pins on one building; merging changes public URLs so it needs a decision
