@@ -1,0 +1,143 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import * as maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
+import { Venue, GameSession } from '@/types'
+import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE } from '@/lib/mapbox'
+import VenuePopover from './VenuePopover'
+
+// maplibre-gl 6 needs its worker served as a file; scripts/copy-map-worker.mjs puts it in public/.
+maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs')
+import { createPinElement, TYPE_COLORS } from './MapPin'
+import { isLiveNow } from '@/lib/sessions'
+import { matchesFilters, type SessionFilters } from '@/lib/filters'
+
+interface MapProps {
+  venues: Venue[]
+  sessions: GameSession[]
+  filters: SessionFilters
+  onPinTap?: () => void
+  onGeolocate?: (coords: { lat: number; lng: number }) => void
+}
+
+
+export default function Map({ venues, sessions, filters, onPinTap, onGeolocate }: MapProps) {
+  const mapContainer = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const markersRef = useRef<{ marker: maplibregl.Marker; venueId: string; el: HTMLElement }[]>([])
+  const onPinTapRef = useRef(onPinTap)
+  const onGeolocateRef = useRef(onGeolocate)
+  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
+
+  useEffect(() => { onPinTapRef.current = onPinTap })
+  useEffect(() => { onGeolocateRef.current = onGeolocate })
+
+  useEffect(() => {
+    if (!mapContainer.current || mapRef.current) return
+
+    mapRef.current = new maplibregl.Map({
+      container: mapContainer.current,
+      style: MAP_STYLE,
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
+    })
+
+    const geoControl = new maplibregl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: false,
+      showAccuracyCircle: false,
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    geoControl.on('geolocate', (e: any) => {
+      onGeolocateRef.current?.({ lat: e.coords.latitude, lng: e.coords.longitude })
+    })
+
+    mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right')
+    mapRef.current.addControl(geoControl, 'top-right')
+    mapRef.current.on('click', () => setSelectedVenue(null))
+
+    return () => {
+      mapRef.current?.remove()
+      mapRef.current = null
+      markersRef.current = []
+    }
+  }, [])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const updateMarkers = () => {
+      // Diff venues against existing markers — add new, remove gone,
+      // reposition moved. Previously this only ran once (guarded by
+      // markersRef.current.length === 0), so venues added/removed/edited
+      // after first mount never got a marker update without a hard reload.
+      const currentVenueIds = new Set(venues.map(v => v.id))
+
+      // Remove markers for venues that no longer exist (deleted or unapproved)
+      markersRef.current = markersRef.current.filter(({ marker, venueId }) => {
+        if (currentVenueIds.has(venueId)) return true
+        marker.remove()
+        return false
+      })
+
+      const existingVenueIds = new Set(markersRef.current.map(m => m.venueId))
+
+      venues.forEach(venue => {
+        if (existingVenueIds.has(venue.id)) {
+          // Reposition in case lat/lng was edited in admin
+          const entry = markersRef.current.find(m => m.venueId === venue.id)
+          entry?.marker.setLngLat([venue.lng, venue.lat])
+          return
+        }
+        const color = TYPE_COLORS[venue.type] ?? TYPE_COLORS.indoor
+        const el = createPinElement({
+          color,
+          isLive: false,
+          isMobile: window.innerWidth < 768,
+        })
+        el.title = venue.name
+        el.addEventListener('click', (e) => {
+          e.stopPropagation()
+          setSelectedVenue(venue)
+          onPinTapRef.current?.()
+        })
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([venue.lng, venue.lat])
+          .addTo(map)
+        markersRef.current.push({ marker, venueId: venue.id, el })
+      })
+
+      // Update opacity + live pulse in place — no destroy/recreate, no flash
+      markersRef.current.forEach(({ venueId, el }) => {
+        const venue = venues.find(v => v.id === venueId)
+        if (!venue) return
+
+        const venueSessions = sessions.filter(s => s.venue_id === venueId)
+        const visibleSessions = venueSessions.filter(s => matchesFilters(s, venue, filters))
+        el.style.opacity = visibleSessions.length > 0 ? '1' : '0.15'
+
+        const hasLive = venueSessions.some(s => isLiveNow(s))
+        const pulseEl = el.querySelector('.live-pulse') as HTMLElement | null
+        if (pulseEl) pulseEl.style.display = hasLive ? 'block' : 'none'
+      })
+    }
+
+    if (map.loaded()) updateMarkers()
+    else map.once('load', updateMarkers)
+  }, [venues, sessions, filters])
+
+  return (
+    <div className="relative w-full h-full">
+      <div ref={mapContainer} className="w-full h-full" />
+      {selectedVenue && (
+        <VenuePopover
+          venue={selectedVenue}
+          sessions={sessions.filter(s => s.venue_id === selectedVenue.id)}
+          onClose={() => setSelectedVenue(null)}
+        />
+      )}
+    </div>
+  )
+}

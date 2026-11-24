@@ -1,0 +1,55 @@
+// Adds Toronto Volleyball Centre (The Hangar) adult league
+// Usage: node scripts/add-tvc.mjs (set DATABASE_URL)
+
+import { getSeedClient } from './lib/seed-client.mjs'
+
+const db = getSeedClient('add-tvc.mjs')
+
+const venue = {
+  name: 'Toronto Volleyball Centre — The Hangar',
+  type: 'indoor',
+  address: '75 Carl Hall Rd',
+  city: 'Toronto',
+  lat: 43.7445,
+  lng: -79.4750,
+  slug: 'tvc-the-hangar',
+  approved: true,
+  website: 'https://torontovolleyballcentre.ca',
+}
+
+console.log('Adding TVC venue...')
+const { data: inserted, error: venueError } = await db.insert('venues', [venue], { single: true })
+
+if (venueError) { console.error('✗ Venue:', venueError.message); process.exit(1) }
+console.log(`✓ Venue inserted: ${inserted.name}`)
+
+const sessions = [
+  {
+    venue_id: inserted.id,
+    title: 'TVC Thursday Intermediate Co-Ed League (7:15pm)',
+    day_of_week: 4,
+    start_time: '19:15',
+    end_time: '20:45',
+    recurring: true,
+    skill_level: 'intermediate',
+    notes: 'Momentum-run league. May 21–Jul 23, 2026. $229+HST individual / $1,249+HST team. Register at momentumvolleyball.ca. Contact: programs@momentumvolleyball.ca',
+    contact_link: 'https://momentumvolleyball.ca',
+  },
+  {
+    venue_id: inserted.id,
+    title: 'TVC Thursday Intermediate Co-Ed League (8:45pm)',
+    day_of_week: 4,
+    start_time: '20:45',
+    end_time: '22:15',
+    recurring: true,
+    skill_level: 'intermediate',
+    notes: 'Momentum-run league. May 21–Jul 23, 2026. $229+HST individual / $1,249+HST team. Register at momentumvolleyball.ca. Contact: programs@momentumvolleyball.ca',
+    contact_link: 'https://momentumvolleyball.ca',
+  },
+]
+
+console.log('Adding TVC sessions...')
+const { error: sessionError } = await db.insert('game_sessions', sessions)
+if (sessionError) { console.error('✗ Sessions:', sessionError.message); process.exit(1) }
+console.log(`✓ ${sessions.length} sessions inserted`)
+console.log('\n✓ Done.')
